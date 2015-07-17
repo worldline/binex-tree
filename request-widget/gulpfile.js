@@ -6,7 +6,7 @@ var sourcemaps = require('gulp-sourcemaps');
 var Builder = require('systemjs-builder');
 var webserver = require('gulp-webserver');
 var sass = require('gulp-sass');
-var karma = require('gulp-karma');
+var karma = require('karma').server;
 var path = require('path');
 
 
@@ -15,26 +15,58 @@ var paths = {
   // base folder for ES6 bundeling
   source: './src',
   // all ES6 files to be linted watched
-  sources: ['./src/**/*.js', './test/**/*.js'],
+  sources: './src/**/*.js',
+  tests: './test/**/*.js',
   // entry point for sources
   sourcesMain: 'app.js',
   // all scss files to be watched
-  styles: ['./src/styles/**/*.scss'],
+  styles: './src/styles/**/*.scss',
   // entry point for styles
   stylesMain: './src/styles/main.scss',
   // destination folder
   dest: './build'
 };
 
-function test (action) {
-  return function() {
-    return gulp.src(paths.sources)
-    .pipe(karma({
-      configFile: 'karma.conf.js',
-      action: action
-    }));
-  };
-}
+var karmaConf = {
+  configFile: '',
+  singleRun: true,
+
+  basePath: './',
+  frameworks: ['mocha', 'chai'],
+  files: [paths.tests],
+  // Will be configured just after
+  preprocessors: {},
+  coverageReporter: {
+    reporters: [{
+      type: 'text-summary',
+    },{
+      type: 'html',
+      dir: 'coverage/',
+    }]
+  },
+  webpack: {
+    devtool: '#source-map',
+    debug: false,
+    module: {
+      preLoaders: [{
+        test: /\.js$/,
+        exclude: /(test|node_modules)/,
+        loader: 'isparta-instrumenter-loader'
+      }],
+      loaders: [{
+        test: /\.js$/,
+        exclude: /node_modules/,
+        loader: 'babel-loader'
+      }]
+    }
+  },
+  reporters: ['progress', 'coverage'],
+  colors: true,
+  logLevel: 'WARN',
+  browsers: ['Chrome']
+};
+
+karmaConf.preprocessors[paths.tests] = ['webpack', 'sourcemap'];
 
 // Clean task removes every generated stuff
 gulp.task('clean', function(done) {
@@ -84,8 +116,12 @@ gulp.task('styles', function() {
 });
 
 // test tasks, entierly relying on karma
-gulp.task('test-watch', test('watch'));
-gulp.task('test', test('run'));
+gulp.task('test', function (done) {
+  karma.start(karmaConf, function(err) {
+    done();
+    process.exit(err);
+  });
+});
 
 // build will cleen, lint, compile and bundle source for usage in braowser
 gulp.task('build', function(done) {
