@@ -1,30 +1,21 @@
 var gulp = require('gulp');
-var eslint = require('gulp-eslint');
 var rm = require('rimraf');
 var runSequence = require('run-sequence');
-var sourcemaps = require('gulp-sourcemaps');
-var Builder = require('systemjs-builder');
-var webserver = require('gulp-webserver');
-var sass = require('gulp-sass');
 var karma = require('karma').server;
 var path = require('path');
+var webpack = require('webpack');
+var WebpackDevServer = require('webpack-dev-server');
+var _ = require('lodash');
 
+
+var port = 8080;
 
 // Single path declarations
 var paths = {
-  // base folder for ES6 bundeling
-  source: './src',
-  // all ES6 files to be linted watched
-  sources: './src/**/*.js',
+  sourceMain: './src/app.js',
   tests: './test/**/*.js',
-  // entry point for sources
-  sourcesMain: 'app.js',
-  // all scss files to be watched
-  styles: './src/styles/**/*.scss',
-  // entry point for styles
-  stylesMain: './src/styles/main.scss',
-  // destination folder
-  dest: './build'
+  dest: './build',
+  coverage: './coverage'
 };
 
 var karmaConf = {
@@ -41,7 +32,7 @@ var karmaConf = {
       type: 'text-summary',
     },{
       type: 'html',
-      dir: 'coverage/',
+      dir: paths.coverage,
     }]
   },
   webpack: {
@@ -70,7 +61,7 @@ karmaConf.preprocessors[paths.tests] = ['webpack', 'sourcemap'];
 
 // Clean task removes every generated stuff
 gulp.task('clean', function(done) {
-  var toRemove = [paths.dest]
+  var toRemove = [paths.dest, paths.coverage];
   var removed = 0;
   var lastErr = null;
 
@@ -82,37 +73,57 @@ gulp.task('clean', function(done) {
         done(lastErr);
       }
     });
-  })
-});
-
-// The 'lint' task checks that sources and test are compliant
-gulp.task('lint', function() {
-  return gulp.src(paths.sources)
-    .pipe(eslint())
-    .pipe(eslint.format())
-    .pipe(eslint.failAfterError());
-});
-
-// Thrn 'bundle' task gets all compiled scripts and bundle them for System.js
-gulp.task('bundle', function () {
-  return new Builder({
-    baseURL: 'file:///' + path.normalize(path.resolve(paths.source)),
-    transpiler: 'babel',
-    defaultJSExtensions: true
-  }).buildSFX(paths.sourcesMain, path.join(paths.dest, paths.sourcesMain), {
-    sourceMaps: true,
-    minify: true
   });
 });
 
-gulp.task('styles', function() {
-  return gulp.src(paths.stylesMain)
-    .pipe(sourcemaps.init())
-    .pipe(sass({
-      outputStyle: 'compressed'
-    }).on('error', sass.logError))
-    .pipe(sourcemaps.write('.'))
-    .pipe(gulp.dest(paths.dest));
+var webpackConfig = {
+  entry: path.resolve(paths.sourceMain),
+  output: {
+    path: path.resolve(paths.dest),
+    filename: path.basename(paths.sourceMain)
+  },
+  debug: false,
+  devtool: 'eval-source-map',
+  module: {
+    preLoaders: [{
+      test: /\.js$/, loader: 'eslint-loader', exclude: /node_modules/
+    }],
+    loaders: [{
+      test: /\.js$/, loader: 'babel-loader', exclude: /node_modules/
+    }, {
+      test: /\.scss$/, loader: 'style!css?sass?outputStyle=expanded'
+    }]
+  },
+  resolve: {
+    extensions: ['', '.js']
+  }
+};
+
+// Thrn 'bundle' task gets all compiled scripts and bundle them for System.js
+gulp.task('bundle', function (done) {
+  webpack(_.assign({}, webpackConfig, {
+    plugins: [new (require('webpack/lib/optimize/UglifyJsPlugin'))({compress: {warnings: false}})]
+  }), function(err, stats) {
+    if(err) {
+      return done(err);
+    }
+    if (stats.compilation && stats.compilation.warnings) {
+      console.error(stats.compilation.warnings.join('\n'));
+    }
+    done();
+  });
+});
+
+gulp.task('default', function(done) {
+  new WebpackDevServer(webpack(webpackConfig), {
+    publicPath: '/build/'
+  }).listen(port, 'localhost', function(err) {
+    if (err) {
+      return done(err);
+    }
+    console.log('run server on http://localhost:' + port + '/webpack-dev-server/');
+    done();
+  });
 });
 
 // test tasks, entierly relying on karma
@@ -125,20 +136,5 @@ gulp.task('test', function (done) {
 
 // build will cleen, lint, compile and bundle source for usage in braowser
 gulp.task('build', function(done) {
-  runSequence('clean', 'lint', ['bundle', 'styles'], done);
-});
-
-// Default development task is to build, then to watch for files changes.
-gulp.task('default', ['build'], function() {
-  gulp.src('.')
-    .pipe(webserver({
-      livereload: {
-        enable: true,
-        filter: function(fileName) {
-          return !fileName.match(/.map$/);
-        }
-      }
-    }));
-  gulp.watch(paths.sources, ['build']);
-  gulp.watch(paths.styles, ['styles']);
+  runSequence('clean', 'lint', 'bundle', done);
 });
