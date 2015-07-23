@@ -15,11 +15,13 @@
     "babel-eslint": "3.1.9",
     "babel-loader": "5.3.2",
     "chai": "3.0.0",
-    "css-loader": "^0.15.5",
     "eslint": "^0.24.1",
-    "eslint-loader": "^0.14.2",
     "gulp": "3.8.11",
+    "gulp-eslint": "^0.15.0",
+    "gulp-sass": "^2.0.4",
+    "gulp-sourcemaps": "^1.5.2",
     "gulp-util": "3.0.4",
+    "gulp-webserver": "^0.9.1",
     "isparta": "3.0.3",
     "isparta-instrumenter-loader": "0.2.1",
     "karma": "0.12.31",
@@ -35,9 +37,6 @@
     "node-sass": "^3.2.0",
     "rimraf": "2.3.4",
     "run-sequence": "1.1.1",
-    "sass-loader": "^1.0.3",
-    "style-loader": "^0.12.3",
-    "webpack": "^1.10.3",
-    "webpack-dev-server": "^1.10.1"
+    "webpack": "^1.10.3"
   }
 }

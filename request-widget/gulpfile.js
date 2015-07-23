@@ -1,63 +1,33 @@
 var gulp = require('gulp');
+var eslint = require('gulp-eslint');
 var rm = require('rimraf');
 var runSequence = require('run-sequence');
+var sourcemaps = require('gulp-sourcemaps');
+var webserver = require('gulp-webserver');
+var sass = require('gulp-sass');
 var karma = require('karma').server;
 var path = require('path');
-var webpack = require('webpack');
-var WebpackDevServer = require('webpack-dev-server');
 var _ = require('lodash');
+var webpack = require('webpack');
 
-
-var port = 8080;
 
 // Single path declarations
 var paths = {
-  sourceMain: './src/app.js',
+  // base folder for ES6 bundeling
+  source: './src',
+  // all ES6 files to be linted watched
+  sources: './src/**/*.js',
   tests: './test/**/*.js',
+  // entry point for sources
+  sourcesMain: 'app.js',
+  // all scss files to be watched
+  styles: './src/styles/**/*.scss',
+  // entry point for styles
+  stylesMain: './src/styles/main.scss',
+  // destination folder
   dest: './build',
   coverage: './coverage'
 };
-
-var karmaConf = {
-  configFile: '',
-  singleRun: true,
-
-  basePath: './',
-  frameworks: ['mocha', 'chai'],
-  files: [paths.tests],
-  // Will be configured just after
-  preprocessors: {},
-  coverageReporter: {
-    reporters: [{
-      type: 'text-summary',
-    },{
-      type: 'html',
-      dir: paths.coverage,
-    }]
-  },
-  webpack: {
-    devtool: '#source-map',
-    debug: false,
-    module: {
-      preLoaders: [{
-        test: /\.js$/,
-        exclude: /(test|node_modules)/,
-        loader: 'isparta-instrumenter-loader'
-      }],
-      loaders: [{
-        test: /\.js$/,
-        exclude: /node_modules/,
-        loader: 'babel-loader'
-      }]
-    }
-  },
-  reporters: ['progress', 'coverage'],
-  colors: true,
-  logLevel: 'WARN',
-  browsers: ['Chrome']
-};
-
-karmaConf.preprocessors[paths.tests] = ['webpack', 'sourcemap'];
 
 // Clean task removes every generated stuff
 gulp.task('clean', function(done) {
@@ -76,59 +46,93 @@ gulp.task('clean', function(done) {
   });
 });
 
-var webpackConfig = {
-  entry: path.resolve(paths.sourceMain),
-  output: {
-    path: path.resolve(paths.dest),
-    filename: path.basename(paths.sourceMain)
-  },
-  debug: false,
-  devtool: 'eval-source-map',
-  module: {
-    preLoaders: [{
-      test: /\.js$/, loader: 'eslint-loader', exclude: /node_modules/
-    }],
-    loaders: [{
-      test: /\.js$/, loader: 'babel-loader', exclude: /node_modules/
-    }, {
-      test: /\.scss$/, loader: 'style!css?sass?outputStyle=expanded'
-    }]
-  },
-  resolve: {
-    extensions: ['', '.js']
-  }
-};
-
-// Thrn 'bundle' task gets all compiled scripts and bundle them for System.js
-gulp.task('bundle', function (done) {
-  webpack(_.assign({}, webpackConfig, {
-    plugins: [new (require('webpack/lib/optimize/UglifyJsPlugin'))({compress: {warnings: false}})]
-  }), function(err, stats) {
-    if(err) {
-      return done(err);
-    }
-    if (stats.compilation && stats.compilation.warnings) {
-      console.error(stats.compilation.warnings.join('\n'));
-    }
-    done();
-  });
+// The 'lint' task checks that sources and test are compliant
+gulp.task('lint', function() {
+  return gulp.src(paths.sources)
+    .pipe(eslint())
+    .pipe(eslint.format())
+    .pipe(eslint.failAfterError());
 });
 
-gulp.task('default', function(done) {
-  new WebpackDevServer(webpack(webpackConfig), {
-    publicPath: '/build/'
-  }).listen(port, 'localhost', function(err) {
-    if (err) {
-      return done(err);
+// Thrn 'bundle' task gets all compiled scripts and bundle them for System.js
+gulp.task('bundle', ['lint'], function (done) {
+  webpack(_.assign({}, {
+    entry: path.resolve(paths.source, paths.sourcesMain),
+    output: {
+      path: path.resolve(paths.dest),
+      filename: paths.sourcesMain,
+      devtoolModuleFilenameTemplate: '[resource-path]'
+    },
+    devtool: 'source-map',
+    debug: false,
+    module: {
+      loaders: [{
+        test: /\.js$/,
+        exclude: /node_modules/,
+        loader: 'babel-loader'
+      }]
+    },
+    resolve: {
+      extensions: ['', '.js']
     }
-    console.log('run server on http://localhost:' + port + '/webpack-dev-server/');
-    done();
-  });
+  }, {
+    plugins: [new (require('webpack/lib/optimize/UglifyJsPlugin'))()]
+  }), done);
+});
+
+gulp.task('styles', function() {
+  return gulp.src(paths.stylesMain)
+    .pipe(sourcemaps.init())
+    .pipe(sass({
+      outputStyle: 'compressed'
+    }).on('error', sass.logError))
+    .pipe(sourcemaps.write('.'))
+    .pipe(gulp.dest(paths.dest));
 });
 
 // test tasks, entierly relying on karma
 gulp.task('test', function (done) {
-  karma.start(karmaConf, function(err) {
+  var conf = {
+    configFile: '',
+    singleRun: true,
+
+    basePath: './',
+    frameworks: ['mocha', 'chai'],
+    files: [paths.tests],
+    // Will be configured just after
+    preprocessors: {},
+    coverageReporter: {
+      reporters: [{
+        type: 'text-summary'
+      }, {
+        type: 'html',
+        dir: paths.coverage
+      }]
+    },
+    webpack: {
+      devtool: '#source-map',
+      debug: false,
+      module: {
+        preLoaders: [{
+          test: /\.js$/,
+          exclude: /(test|node_modules)/,
+          loader: 'isparta-instrumenter-loader'
+        }],
+        loaders: [{
+          test: /\.js$/,
+          exclude: /node_modules/,
+          loader: 'babel-loader'
+        }]
+      }
+    },
+    reporters: ['progress', 'coverage'],
+    colors: true,
+    logLevel: 'WARN',
+    browsers: ['Chrome']
+  };
+  conf.preprocessors[paths.tests] = ['webpack', 'sourcemap'];
+
+  karma.start(conf, function(err) {
     done();
     process.exit(err);
   });
@@ -136,5 +140,21 @@ gulp.task('test', function (done) {
 
 // build will cleen, lint, compile and bundle source for usage in braowser
 gulp.task('build', function(done) {
-  runSequence('clean', 'lint', 'bundle', done);
+  runSequence('clean', ['bundle', 'styles'], done);
+});
+
+// Default development task is to build, then to watch for files changes.
+gulp.task('default', ['build'], function() {
+  gulp.src('.')
+    .pipe(webserver({
+      livereload: {
+        enable: true,
+        filter: function(fileName) {
+          // only built files and html page are to be watched
+          return fileName.match(/((\\|\/)build|index.html$)/) && !fileName.match(/.map$/);
+        }
+      }
+    }));
+  gulp.watch(paths.sources, ['bundle']);
+  gulp.watch(paths.styles, ['styles']);
 });

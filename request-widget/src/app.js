@@ -1,5 +1,3 @@
-require('./styles/main.scss');
-
 import * as utils from './utils/tools';
 
 let node = document.getElementById('main');
