@@ -1,6 +1,5 @@
 var gulp = require('gulp');
-var eslint = require('gulp-eslint');
-var rm = require('rimraf');
+var tasks = require('../gulp-tasks');
 var runSequence = require('run-sequence');
 var sourcemaps = require('gulp-sourcemaps');
 var webserver = require('gulp-webserver');
@@ -29,30 +28,8 @@ var paths = {
   coverage: './coverage'
 };
 
-// Clean task removes every generated stuff
-gulp.task('clean', function(done) {
-  var toRemove = [paths.dest, paths.coverage];
-  var removed = 0;
-  var lastErr = null;
-
-  toRemove.forEach(function(path) {
-    rm(path, function(err) {
-      removed++;
-      lastErr = err ? err : lastErr;
-      if (removed === toRemove.length) {
-        done(lastErr);
-      }
-    });
-  });
-});
-
-// The 'lint' task checks that sources and test are compliant
-gulp.task('lint', function() {
-  return gulp.src(paths.sources)
-    .pipe(eslint())
-    .pipe(eslint.format())
-    .pipe(eslint.failAfterError());
-});
+tasks.clean(gulp, [paths.dest, paths.coverage]);
+tasks.lint(gulp, paths.sources, paths.tests);
 
 // Thrn 'bundle' task gets all compiled scripts and bundle them for System.js
 gulp.task('bundle', ['lint'], function (done) {
