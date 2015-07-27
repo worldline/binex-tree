@@ -31,6 +31,55 @@ var paths = {
 tasks.clean(gulp, [paths.dest, paths.coverage]);
 tasks.lint(gulp, paths.sources, paths.tests);
 
+// Karma configuration
+var conf = {
+  configFile: '',
+  basePath: './',
+  frameworks: ['html-prepend', 'mocha', 'chai'],
+  files: [paths.tests],
+  // Will be configured just after
+  preprocessors: {},
+  coverageReporter: {
+    reporters: [{
+      type: 'text-summary'
+    }, {
+      type: 'html',
+      dir: paths.coverage
+    }]
+  },
+  webpack: {
+    devtool: '#source-map',
+    debug: false,
+    module: {
+      preLoaders: [{
+        test: /\.js$/,
+        exclude: /(test|node_modules|common)/,
+        loader: 'isparta-instrumenter-loader'
+      }],
+      loaders: [{
+        test: /\.js$/,
+        exclude: /node_modules/,
+        loader: 'babel-loader'
+      }]
+    }
+  },
+  reporters: ['progress', 'coverage'],
+  colors: true,
+  logLevel: 'WARN',
+  browsers: ['Chrome'],
+  plugins: [
+    'karma-chai',
+    'karma-coverage',
+    'karma-chrome-launcher',
+    'karma-firefox-launcher',
+    'karma-mocha',
+    'karma-sourcemap-loader',
+    'karma-webpack',
+    require('./test/html-prepend')
+  ]
+};
+conf.preprocessors[paths.tests] = ['webpack', 'sourcemap'];
+
 // Thrn 'bundle' task gets all compiled scripts and bundle them for System.js
 gulp.task('bundle', ['lint'], function (done) {
   webpack(_.assign({}, {
@@ -52,9 +101,9 @@ gulp.task('bundle', ['lint'], function (done) {
     resolve: {
       extensions: ['', '.js']
     }
-  }, {
+  }/*, {
     plugins: [new (require('webpack/lib/optimize/UglifyJsPlugin'))()]
-  }), done);
+  }*/), done);
 });
 
 gulp.task('styles', function() {
@@ -69,50 +118,18 @@ gulp.task('styles', function() {
 
 // test tasks, entierly relying on karma
 gulp.task('test', function (done) {
-  var conf = {
-    configFile: '',
-    singleRun: true,
-
-    basePath: './',
-    frameworks: ['mocha', 'chai'],
-    files: [paths.tests],
-    // Will be configured just after
-    preprocessors: {},
-    coverageReporter: {
-      reporters: [{
-        type: 'text-summary'
-      }, {
-        type: 'html',
-        dir: paths.coverage
-      }]
-    },
-    webpack: {
-      devtool: '#source-map',
-      debug: false,
-      module: {
-        preLoaders: [{
-          test: /\.js$/,
-          exclude: /(test|node_modules)/,
-          loader: 'isparta-instrumenter-loader'
-        }],
-        loaders: [{
-          test: /\.js$/,
-          exclude: /node_modules/,
-          loader: 'babel-loader'
-        }]
-      }
-    },
-    reporters: ['progress', 'coverage'],
-    colors: true,
-    logLevel: 'WARN',
-    browsers: ['Chrome']
-  };
-  conf.preprocessors[paths.tests] = ['webpack', 'sourcemap'];
-
-  karma.start(conf, function(err) {
+  karma.start(_.assign({
+    singleRun: true
+  }, conf), function(err) {
     done();
     process.exit(err);
   });
+});
+
+gulp.task('test-watch', function (done) {
+  karma.start(_.assign({
+    singleRun: false
+  }, conf), done);
 });
 
 // build will cleen, lint, compile and bundle source for usage in braowser

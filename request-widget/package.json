@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Business Center BI & Big Data's targeting engine request widget",
   "dependencies": {
+    "d3": "3.5.6",
     "lodash": "3.10.0"
   },
   "devDependencies": {

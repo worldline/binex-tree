@@ -1,6 +1,4 @@
-import * as utils from './utils/tools';
+import RequestTree from './request_tree';
 
-let node = document.getElementById('main');
-if (node) {
-  node.innerHTML = `<h1>app is loaded : ${utils.add(1, 2, 3, 4, 5)}</h1>`;
-}
+/* eslint no-new: 0 */
+new RequestTree('#main', '(mkt_sgm[value = "gold + long"] && mkt_sgm[value = "gold"] && mkt_sgm[value = "gold"] && mkt_sgm[value = "gold"] && mkt_sgm[value = "gold"] && mkt_sgm[value = "gold"] && mkt_sgm[value = "gold"] && (bought_solar[value = false] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"]))  || (bought_solar[value = false] && gender[value = "male"])');

@@ -1,0 +1,35 @@
+@import 'variables';
+
+.tree {
+  background-color: $background-color;
+
+  .node {
+    position: relative;
+    cursor: pointer;
+
+    > .text {
+      font-size: $label-size;
+      font-family: $label-font;
+      dominant-baseline: ideographic;
+      text-anchor: start;
+    }
+
+    > .content {
+      padding: 1em 1.5em;
+      strokeWidth: 2px;
+      stroke: $primary-color;
+      fill: $label-color;
+    }
+
+    > .decoration {
+      fill: $primary-color;
+      width: 0.5em;
+    }
+  }
+
+  .link {
+    fill: none;
+    stroke: $secondary-color;
+    stroke-width: 2px;
+  }
+}

@@ -79,7 +79,6 @@ exports.lint = function(gulp, sources, tests) {
   if (!_.isArray(sources)) {
     sources = [sources];
   }
-  console.log(sources)
   gulp.task('lint', function() {
     return gulp.src(sources.concat(tests))
     .pipe(eslint())
