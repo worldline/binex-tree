@@ -21,6 +21,11 @@ describe('Request Tree unit tests', () => {
     return selected;
   };
 
+  /**
+   * Function to be called inside an Array.reduce to get hightest number
+   */
+  let getMax = (max, n) => max > n ? max : n;
+
   it('should not build without anchor', () => {
     /* eslint no-new: 0 */
     expect(() => new RequestTree()).to.throw('no node found for');
@@ -88,11 +93,12 @@ describe('Request Tree unit tests', () => {
   it('should use largest node inside a column', () => {
     let tree = new RequestTree('#main', 'f1 [value = "something long"] && (age [value < 7] || age [value > 77])');
     expect(tree).to.have.property('data');
+    let column2 = extractNodes(tree.data, 1);
 
     // get largest node width in second column
-    let largest = extractNodes(tree.data, 1).map(n => n.width).reduce((max, n) => max > n ? max : n);
+    let largest = column2.map(n => n.width).reduce(getMax);
     // get all position (remember, x and y are inverted) in second and third column
-    let posColumn2 = extractNodes(tree.data, 1).map(n => n.y);
+    let posColumn2 = column2.map(n => n.y);
     let posColumn3 = extractNodes(tree.data, 2).map(n => n.y);
 
     // all nodes are aligned in a column
@@ -102,5 +108,23 @@ describe('Request Tree unit tests', () => {
     // nodes of the third column are after the largest node in second column
     let pos = posColumn2[0];
     expect(posColumn3.every(n => n > pos + largest), 'third column is too close to second').to.be.true;
+  });
+
+  it('should collapse column to fit largest node', () => {
+    let tree = new RequestTree('#main', 'f1 [value = "something long"] && (age [value < 7] || age [value > 77])');
+    expect(tree).to.have.property('data');
+
+    let column1 = extractNodes(tree.data, 0);
+    let column2 = extractNodes(tree.data, 1);
+    let column3 = extractNodes(tree.data, 2);
+    let largestColum1 = column1.map(n => n.width).reduce(getMax);
+    let largestColum2 = column2.map(n => n.width).reduce(getMax);
+    let largestColum3 = column3.map(n => n.width).reduce(getMax);
+
+    expect(largestColum1).to.be.below(largestColum2).and.below(largestColum3);
+    expect(largestColum2).to.be.above(largestColum3);
+
+    expect(column2[0].y).to.closeTo(column1[0].y + largestColum1 * 1.4, 1);
+    expect(column3[0].y).to.closeTo(column2[0].y + largestColum2 * 1.4, 1);
   });
 });
