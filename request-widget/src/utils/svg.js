@@ -16,7 +16,9 @@ export function getStyles(node, ...styles) {
   let values = window.getComputedStyle(node);
   styles.forEach(style => {
     let value = values[style];
-    results[style] = /px$/.test(value) ? parseInt(value) / ctm.a : value;
+    if (value) {
+      results[style] = /px$/.test(value) ? parseInt(value) / ctm.a : value;
+    }
   });
   return results;
 }

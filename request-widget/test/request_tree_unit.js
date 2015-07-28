@@ -19,7 +19,7 @@ describe('Request Tree unit tests', () => {
     expect(tree).to.have.property('svg').that.exists;
   });
 
-  it('should build tree from a given request', () => {
+  it.skip('should build tree from a given request', () => {
     let tree = new RequestTree('#main', 'mkt_sgm [value = "gold"]');
     expect(tree).to.have.property('data').that.deep.equals({
       name: 'mkt_sgm',
