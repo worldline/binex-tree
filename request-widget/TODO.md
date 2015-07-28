@@ -1,6 +1,5 @@
 # Request tree
 
-- tests tests tests !
 - move nodes with drag'n drop
 - trigger event when request has changed
 - contextual menu: remove subtree > confirmation + removal

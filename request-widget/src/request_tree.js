@@ -139,7 +139,9 @@ export default class RequestTree {
         child.children.forEach(collapse);
       }
     };
-    this.data.children.forEach(collapse);
+    if (this.data.children) {
+      this.data.children.forEach(collapse);
+    }
 
     node.transition()
       .duration(duration)
