@@ -52,25 +52,6 @@ describe('getStyles', () => {
     expect(styles).to.have.property('fill').that.equals('rgb(255, 0, 0)');
   });
 
-  describe('given a transformation', () => {
-
-    let transformed;
-
-    before(() => {
-      transformed = svg.select('g').attr('transform', 'scale(2)');
-    });
-
-    it('should takes transorfmation into account for pixel values', () => {
-      let styles = getStyles(svg.select('rect'), 'padding-top', 'padding-left', 'padding-bottom');
-      expect(styles).to.have.property('padding-top').that.equals(4);
-      expect(styles).to.have.property('padding-left').that.equals(5);
-    });
-
-    after(() => {
-      transformed.attr('transform', '');
-    });
-  });
-
   it('should automatically parse pixel values', () => {
     let styles = getStyles(svg.select('rect'), 'padding-top', 'padding-left', 'padding-bottom');
     expect(styles).to.have.property('padding-top').that.equals(8);

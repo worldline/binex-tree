@@ -11,13 +11,12 @@ import d3 from 'd3';
  */
 export function getStyles(node, ...styles) {
   node = node instanceof d3.selection ? node.node() : node;
-  let ctm = node.getScreenCTM();
   let results = {};
   let values = window.getComputedStyle(node);
   styles.forEach(style => {
     let value = values[style];
     if (value) {
-      results[style] = /px$/.test(value) ? parseInt(value) / ctm.a : value;
+      results[style] = /px$/.test(value) ? parseInt(value) : value;
     }
   });
   return results;

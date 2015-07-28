@@ -6,7 +6,7 @@ import _ from 'lodash';
 
 /**
  * Add a zoomable g layer inside the tree's svg node.
- * Store into tree's 'zoom' attribute the zoom behavior
+ * Store into tree's 'zoom' attribute the zoom behavior and into tree's 'grid' attribute the created node
  *
  * @param {RequestTree} tree - modified tree instance
  * @param {Number} tree.width - svg node width
@@ -16,19 +16,19 @@ import _ from 'lodash';
  * @return {SVGElement} g group created
  */
 function makeZoomableGrid(tree) {
-  let grid;
   tree.zoom = d3.behavior.zoom()
     .translate([tree.width * .25, 0])
     .scale(tree.initialScale)
     .scaleExtent(tree.scaleExtent)
     .on('zoom', () => {
       // Eventually, animate the move
-      grid.transition().attr('transform', `translate(${d3.event.translate}) scale(${d3.event.scale})`);
+      tree.grid.transition().attr('transform', `translate(${d3.event.translate}) scale(${d3.event.scale})`);
     });
-  grid = tree.svg.call(tree.zoom)
+
+  tree.grid = tree.svg.call(tree.zoom)
     .append('g')
       .attr('transform', `translate(${tree.zoom.translate()}) scale(${tree.zoom.scale()})`);
-  return grid;
+  return tree.grid;
 }
 
 /**
@@ -111,11 +111,127 @@ export default class RequestTree {
     if (this.svg.empty()) {
       throw new Error(`Failed to init Request Tree: no node found for ${anchor}`);
     }
+
+    // Creates a grid that will be pannable and zoomable
+    makeZoomableGrid(this);
+
+    // Because we need D3's this in onDrag function, and access to real this also.
+    let that = this;
+
+    this.dragListener = d3.behavior.drag()
+      .on('dragstart', d => {
+        if (d !== this.data) {
+          this.dragInitialized = true;
+        }
+        // Temporary disable whole tree zoom behaviour
+        d3.event.sourceEvent.stopPropagation();
+      })
+      .on('drag', function(d) {
+        if (!that.dragged && !that.dragInitialized) {
+          return false;
+        }
+        if (that.dragInitialized) {
+          // Keep dragged element and its parent
+          that.dragged = {
+            node: d3.select(this),
+            parent: d.parent,
+            idx: d.parent.children.indexOf(d)
+          };
+          // Removes sub tree from data
+          d.parent.children.splice(that.dragged.idx, 1);
+          that.update();
+          // And replace dragged node only
+          that.grid.append(() => this);
+          that.dragInitialized = false;
+
+          // TODO Highlights possible drop zones
+        }
+        // Moves dragged element under mouse
+        d.x += d3.event.dy;
+        d.y += d3.event.dx;
+        that.dragged.node.attr('transform', `translate(${d.y},${d.x})`);
+      }).on('dragend', d => {
+        if (!this.dragged) {
+          return;
+        }
+        // TODO If element was dropped on possible drop zone
+
+        // Cancels drag by replacing element under its original parent
+        this.dragged.parent.children.splice(this.dragged.idx, 0, d);
+        this.update();
+        this.dragged = null;
+      });
+
     // Initialize request
     this.data = {};
     if (request) {
       this.setRequest(request);
     }
+  }
+
+  /**
+   * Change the displayed request.
+   * Calling this method will totally update the displayed content, removing previous display
+   *
+   * @param {String} request - request to be displayed
+   * @throw {Error} if the new request is invalid
+   */
+  setRequest(request) {
+    // Parse displayed request. Will throw error if invalid
+    this.data = translateRequestToTree(parse(request));
+    this.update();
+  }
+
+  /**
+   * The update method refresh rendering to reflect data changes
+   * 'data' object must have been set previously
+   */
+  update() {
+    // We need a first layout to organize data, and display it.
+    // This layout will allow to compute node's dimensions
+    let tree = d3.layout.tree().nodes(this.data).reverse();
+
+    // Associate data to SVG nodes, and assign unic ids
+    let nextId = 0;
+    let nodes = this.grid.selectAll('g.node')
+      .data(tree, d => d.id || (d.id = ++nextId));
+
+    // Creates node representation
+    nodes.enter()
+      .append('g')
+      .call(this.dragListener)
+      .attr('class', 'node')
+      .call(this.renderNode);
+    // Remove unecessary nodes
+    nodes.exit().remove();
+
+    // Search for biggest node, and individual column width
+    let {biggest, columns} = getDimensions(nodes, this.hSpacing);
+
+    // Then we layout again taking the node size into acocunt.
+    let layout = d3.layout.tree().nodeSize([biggest.height * this.vSpacing, biggest.width]);
+    layout.nodes(this.data);
+
+    // once each column was processed, for all nodes, compute y (wich is the inverted x) and positionnate with animation
+    nodes.each(d => d.y = columns.reduce((sum, width, i) => sum + (i < d.depth ? width : 0), 0))
+      .transition()
+        .duration(this.animDuration)
+        .attr('transform', d => `translate(${d.y},${d.x})`);
+
+    // Creates link representation (remember, x is y and y is x)
+    let links = layout.links(tree);
+    let elbow = makeElbow(columns, this.hSpacing);
+
+    let link = this.grid.selectAll('path.link')
+      .data(links, d => d.target.id);
+    link.enter()
+      .insert('path', 'g')
+      .attr('class', 'link')
+      .attr('d', ({source: {x0: x = 0, y0: y = 0}}) => elbow({source: {x, y, depth: 0}, target: {x, y, depth: 0}}));
+    link.transition()
+      .duration(this.animDuration)
+      .attr('d', elbow);
+    link.exit().remove();
   }
 
   /**
@@ -165,63 +281,5 @@ export default class RequestTree {
           .attr('height', d.height)
           .attr('y', -d.height / 2);
       });
-  }
-
-  /**
-   * Change the displayed request.
-   * Calling this method will totally update the displayed content, removing previous display
-   *
-   * @param {String} request - request to be displayed
-   * @throw {Error} if the new request is invalid
-   */
-  setRequest(request) {
-    // Parse displayed request. Will throw error if invalid
-    this.data = translateRequestToTree(parse(request));
-
-    // Creates a grid that will be pannable and zoomable
-    let grid = makeZoomableGrid(this);
-
-    // We need a first layout to organize data, and display it.
-    // This layout will allow to compute node's dimensions
-    let tree = d3.layout.tree().nodes(this.data).reverse();
-
-    // Associate data to SVG nodes, and assign unic ids
-    let nextId = 0;
-    let join = grid.selectAll('g.node')
-      .data(tree, d => d.id || (d.id = ++nextId));
-
-    // Creates node representation
-    let node = join.enter()
-      .append('g')
-      //.call(dragListener)
-      .attr('class', 'node')
-      .call(this.renderNode);
-
-    // Search for biggest node, and individual column width
-    let {biggest, columns} = getDimensions(node, this.hSpacing);
-
-    // Then we layout again taking the node size into acocunt.
-    let layout = d3.layout.tree().nodeSize([biggest.height * this.vSpacing, biggest.width]);
-    layout.nodes(this.data);
-
-    // once each column was processed, comput new node's y (with is the inverted x)
-    node.each(d => d.y = columns.reduce((sum, width, i) => sum + (i < d.depth ? width : 0), 0))
-      .transition()
-        .duration(this.animDuration)
-        .attr('transform', d => `translate(${d.y},${d.x})`);
-
-    // Creates link representation (remember, x is y and y is x)
-    let links = layout.links(tree);
-
-    let elbow = makeElbow(columns, this.hSpacing);
-    let link = grid.selectAll('path.link')
-      .data(links, (d) => d.target.id);
-    link.enter()
-      .insert('path', 'g')
-      .attr('class', 'link')
-      .attr('d', ({source: {x0: x = 0, y0: y = 0}}) => elbow({source: {x, y, depth: 0}, target: {x, y, depth: 0}}));
-    link.transition()
-      .duration(this.animDuration)
-      .attr('d', elbow);
   }
 }
