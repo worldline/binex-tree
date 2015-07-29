@@ -1,5 +1,15 @@
 @import 'variables';
 
+@mixin node-color($color, $background: $background-color) {
+  > .content {
+    stroke: $color;
+    fill: $background;
+  }
+  > .decoration {
+    fill: $color;
+  }
+}
+
 .tree {
   background-color: $background-color;
 
@@ -17,19 +27,36 @@
     > .content {
       padding: 1em 1.5em;
       strokeWidth: 2px;
-      stroke: $primary-color;
-      fill: $label-color;
     }
 
     > .decoration {
-      fill: $primary-color;
       width: 0.5em;
+    }
+
+    @include node-color($primary-color);
+  }
+
+  .drag-in-progress {
+
+    .node:not(.droppable) {
+      transition: opacity 500ms;
+      opacity: 0.2;
+    }
+
+    .node.dragged {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .droppable.selected {
+      @include node-color($success-color);
     }
   }
 
   .link {
     fill: none;
-    stroke: $secondary-color;
+    stroke: $tertiary-color;
     stroke-width: 2px;
   }
+
 }
