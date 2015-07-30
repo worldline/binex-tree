@@ -34,7 +34,7 @@ export function translateTreeToRequest(tree) {
       request.name = tree.name;
       for (let prop in tree) {
         // copy everything that was not added by d3 layout.
-        if (['parent', 'x', 'y', 'depth', 'name', 'width', 'height'].indexOf(prop) === -1) {
+        if (['parent', 'x', 'y', 'depth', 'name', 'width', 'height', '__id'].indexOf(prop) === -1) {
           request[prop] = tree[prop];
         }
       }

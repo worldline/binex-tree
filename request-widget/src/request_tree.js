@@ -178,8 +178,10 @@ export default class RequestTree {
     // This layout will allow to compute node's dimensions
     let tree = d3.layout.tree().nodes(this.data).reverse();
 
-    // Associate data to SVG nodes
-    let nodes = this.grid.selectAll('g.node').data(tree);
+    // Associate data to SVG nodes, and add a unic id for linking
+    let nextId = 0;
+    let nodes = this.grid.selectAll('g.node')
+      .data(tree, d => d.__id || (d.__id = ++nextId));
 
     // Creates node representation
     nodes.enter()
@@ -212,7 +214,7 @@ export default class RequestTree {
     let elbow = makeElbow(columns, this.hSpacing);
 
     let link = this.grid.selectAll('path.link')
-      .data(links, d => d.target.id);
+      .data(links, d => d.target.__id);
     link.enter()
       .insert('path', 'g')
       .attr('class', 'link')
@@ -288,32 +290,35 @@ export default class RequestTree {
       // Do not drag the root itself
       return;
     }
-    // Keep dragged element and its parent
-    this.dragged = {
-      node: node.classed('dragged', true),
-      parent: d.parent,
-      idx: d.parent.children.indexOf(d)
-    };
-    // Removes sub tree from data
-    d.parent.children.splice(this.dragged.idx, 1);
-    this.update();
-    // And replace dragged node only
-    this.grid.classed('drag-in-progress', true)
-      .append(() => node.node());
+    // Use a timeout to discard drag'n drop operation that are faster than 50ms
+    this.discardedDrag = setTimeout(() => {
+      this.discardedDrag = null;
+      // Keep dragged element and its parent
+      this.dragged = {
+        node: node.classed('dragged', true),
+        parent: d.parent,
+        idx: d.parent.children.indexOf(d)
+      };
+      // Removes sub tree from data
+      d.parent.children.splice(this.dragged.idx, 1);
+      this.update();
+      // And replace dragged node only
+      this.grid.classed('drag-in-progress', true)
+        .append(() => node.node());
 
-    let that = this;
-    // Highlight possible drop zone
-    d3.selectAll('.node:not(.leaf):not(.dragged)')
-      .classed('droppable', true)
-      .on('mouseover', function() {
-        that.dragged.drop = d3.select(this)
-          .classed('selected', true);
-      })
-      .on('mouseout', () => {
-        this.dragged.drop.classed('selected', false);
-        this.dragged.drop = null;
-      });
-
+      let that = this;
+      // Highlight possible drop zone
+      d3.selectAll('.node:not(.leaf):not(.dragged)')
+        .classed('droppable', true)
+        .on('mouseover', function() {
+          that.dragged.drop = d3.select(this)
+            .classed('selected', true);
+        })
+        .on('mouseout', () => {
+          this.dragged.drop.classed('selected', false);
+          this.dragged.drop = null;
+        });
+    }, 50);
     // Temporary disable whole tree zoom behaviour
     d3.event.sourceEvent.stopPropagation();
   }
@@ -343,6 +348,10 @@ export default class RequestTree {
    * @param {Object} d - dragged subtree data
    */
   onDrop(d) {
+    if (this.discardedDrag) {
+      clearTimeout(this.discardedDrag);
+      return;
+    }
     if (!this.dragged) {
       return;
     }

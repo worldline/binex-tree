@@ -43,7 +43,6 @@ describe('Request Tree unit tests', () => {
     let sync = true;
     let tree = new RequestTree('#main', JSON.parse(JSON.stringify(request))).on('change', data => {
       expect(sync, 'change event was triggered synchronously !').to.be.false;
-      console.log(data);
       expect(data).to.deep.equals(request);
       done();
     });
