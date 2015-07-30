@@ -1,8 +1,6 @@
 import d3 from 'd3';
-import {parse} from '../../common/src/grammar_parser';
-import {translateRequestToTree} from './utils/tools';
+import {translateRequestToTree, assign, translateTreeToRequest} from './utils/tools';
 import * as utils from './utils/svg';
-import _ from 'lodash';
 
 /**
  * Add a zoomable g layer inside the tree's svg node.
@@ -67,6 +65,19 @@ function getDimensions(node, hSpacing) {
 }
 
 /**
+ * Asynchrnously dispatch a change event (with data as parameter) on a given tree instance
+ *
+ * @param {RequestTree} tree - concerned tree instance
+ */
+function dispatchChange(tree) {
+  // Asynchronously dispatch change on data
+  // TODO check effective change
+  setTimeout(() => {
+    tree.change(translateTreeToRequest(tree.data));
+  }, 0);
+}
+
+/**
  * Function factory that will return a SVGPath generator between two positions
  * Generated path are square links between the two node, where vertical elbow is located in the space
  * between two columns.
@@ -89,16 +100,26 @@ function makeElbow(columns, hSpacing) {
 export default class RequestTree {
 
   constructor(anchor, request = null, options = {}) {
-    _.assign(this, {
+
+    // Copy options, defaults, and override them with parameters.
+    // Also makes the instance an event dispatcher.
+    assign(this, {
       ratio: 16 / 9,
       width: 500,
-      initialScale: 0.3,
-      scaleExtent: [0.04, 0.8],
+      initialScale: 0.2,
+      scaleExtent: [0.04, 0.5],
       hSpacing: 1.4,
       vSpacing: 1.1,
       animDuration: 1000,
       dragged: {}
-    }, options);
+    }, d3.dispatch('change'), options);
+
+    // Ensure that d3.on returns the current instance.
+    let d3On = this.on;
+    this.on = (...args) => {
+      d3On.apply(this, args);
+      return this;
+    };
 
     // Use fixed width for position computation
     this.height = this.width / this.ratio;
@@ -143,8 +164,9 @@ export default class RequestTree {
    */
   setRequest(request) {
     // Parse displayed request. Will throw error if invalid
-    this.data = translateRequestToTree(parse(request));
+    this.data = translateRequestToTree(request);
     this.update();
+    dispatchChange(this);
   }
 
   /**
@@ -156,18 +178,18 @@ export default class RequestTree {
     // This layout will allow to compute node's dimensions
     let tree = d3.layout.tree().nodes(this.data).reverse();
 
-    // Associate data to SVG nodes, and assign unic ids
-    let nextId = 0;
-    let nodes = this.grid.selectAll('g.node')
-      .data(tree, d => d.id || (d.id = ++nextId));
+    // Associate data to SVG nodes
+    let nodes = this.grid.selectAll('g.node').data(tree);
 
     // Creates node representation
     nodes.enter()
       .append('g')
       .call(this.dragListener)
-      .attr('class', 'node')
-      .call(this.renderNode)
-      .classed('leaf', d => !('children' in d));
+      .attr('class', 'node');
+
+    // For new and existing nodes, update rendering.
+    nodes.call(this.renderNode)
+      .classed('leaf', ({name}) => name !== '$and' && name !== '$or');
 
     // Remove unecessary nodes
     nodes.exit().remove();
@@ -208,6 +230,9 @@ export default class RequestTree {
    * @param {d3.selection} node - currently represented d3 selection
    */
   renderNode(node) {
+    // Remove previous content
+    node.html('');
+
     node.append('text')
       .attr('class', 'text')
       .text(d => d.name + (d.value ? ` ${d.value.operator} ${d.value.operand}` : ''));
@@ -255,7 +280,7 @@ export default class RequestTree {
    * If the dragged node is not root, initiate inner state (`this.dragged`),
    * highlight possible drop zone (other non-leaf nodes) and bind listener on them
    *
-   * @parma {d3.selection} node - dragged SVG node
+   * @param {d3.selection} node - dragged SVG node
    * @param {Object} d - dragged subtree data
    */
   onDragStart(node, d) {
@@ -332,7 +357,13 @@ export default class RequestTree {
     if (this.dragged.drop) {
       // If element was dropped on possible drop zone, add it to children
       this.dragged.drop.classed('selected', false);
-      this.dragged.drop.datum().children.push(d);
+      let parent = this.dragged.drop.datum();
+      if (!Array.isArray(parent.children)) {
+        // Case of drop node is empty
+        parent.children = [];
+      }
+      parent.children.push(d);
+      dispatchChange(this);
     } else {
       // Cancels drag by replacing element under its original parent
       this.dragged.parent.children.splice(this.dragged.idx, 0, d);

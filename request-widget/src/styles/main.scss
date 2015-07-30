@@ -12,10 +12,14 @@
 
 .tree {
   background-color: $background-color;
+  cursor: move;
+  width: 100%;
+  height: 100%;
 
   .node {
     position: relative;
     cursor: pointer;
+    @include node-color($secondary-color);
 
     > .text {
       font-size: $label-size;
@@ -32,7 +36,9 @@
     > .decoration {
       width: 0.5em;
     }
+  }
 
+  .node.leaf {
     @include node-color($primary-color);
   }
 

@@ -1,6 +1,7 @@
 import RequestTree from '../src/request_tree';
 const expect = chai.expect;
 chai.config.truncateThreshold = 0;
+import {parse} from '../../common/src/grammar_parser';
 
 describe('Request Tree unit tests', () => {
 
@@ -31,19 +32,22 @@ describe('Request Tree unit tests', () => {
     expect(() => new RequestTree()).to.throw('no node found for');
   });
 
-  it('should not build with an invalid request', () => {
-    /* eslint no-new: 0 */
-    expect(() => new RequestTree('#main', 'invalid')).to.throw('SyntaxError');
-  });
-
   it('should build empty tree', () => {
     let tree = new RequestTree('#main');
     expect(tree).to.have.property('data').that.is.empty;
     expect(tree).to.have.property('svg').that.exists;
   });
 
-  it('should build tree from a given request', () => {
-    let tree = new RequestTree('#main', 'mkt_sgm [value = "gold"]');
+  it('should build tree from a given request', (done) => {
+    let request = parse('mkt_sgm [value = "gold"]');
+    let sync = true;
+    let tree = new RequestTree('#main', JSON.parse(JSON.stringify(request))).on('change', data => {
+      expect(sync, 'change event was triggered synchronously !').to.be.false;
+      console.log(data);
+      expect(data).to.deep.equals(request);
+      done();
+    });
+    sync = false;
     expect(tree).to.have.property('data');
     expect(tree.data).to.have.property('name').that.equals('mkt_sgm');
     expect(tree.data).to.have.property('value').that.deep.equals({
@@ -55,8 +59,20 @@ describe('Request Tree unit tests', () => {
     expect(tree).to.have.property('svg').that.exists;
   });
 
+  it('should customize default options in constructor', () => {
+    let tree = new RequestTree('#main', {$and: []}, {initialScale: 1, vSpacing: 1.5, other: 'unknown'});
+    expect(tree).to.have.property('initialScale').that.equals(1);
+    expect(tree).to.have.property('vSpacing').that.equals(1.5);
+    expect(tree).to.have.property('other').that.equals('unknown');
+    expect(tree).to.have.property('hSpacing').that.equals(1.4);
+    expect(tree).to.have.property('ratio').that.equals(16 / 9);
+    expect(tree).to.have.property('width').that.equals(500);
+    expect(tree).to.have.property('scaleExtent').that.deep.equals([0.04, 0.5]);
+    expect(tree).to.have.property('animDuration').that.equals(1000);
+  });
+
   it('should represent multiple hierarchichal levels', () => {
-    let tree = new RequestTree('#main', 'gender [value = "male"] && (age [value < 7] || age [value > 77])');
+    let tree = new RequestTree('#main', parse('gender [value = "male"] && (age [value < 7] || age [value > 77])'));
     expect(tree).to.have.property('data');
 
     // root is logical and
@@ -91,7 +107,7 @@ describe('Request Tree unit tests', () => {
   });
 
   it('should use largest node inside a column', () => {
-    let tree = new RequestTree('#main', 'f1 [value = "something long"] && (age [value < 7] || age [value > 77])');
+    let tree = new RequestTree('#main', parse('f1 [value = "something long"] && (age [value < 7] || age [value > 77])'));
     expect(tree).to.have.property('data');
     let column2 = extractNodes(tree.data, 1);
 
@@ -111,7 +127,7 @@ describe('Request Tree unit tests', () => {
   });
 
   it('should collapse column to fit largest node', () => {
-    let tree = new RequestTree('#main', 'f1 [value = "something long"] && (age [value < 7] || age [value > 77])');
+    let tree = new RequestTree('#main', parse('f1 [value = "something long"] && (age [value < 7] || age [value > 77])'));
     expect(tree).to.have.property('data');
 
     let column1 = extractNodes(tree.data, 0);

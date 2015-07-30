@@ -22,7 +22,7 @@ var paths = {
   // all scss files to be watched
   styles: './src/styles/**/*.scss',
   // entry point for styles
-  stylesMain: './src/styles/main.scss',
+  stylesMain: ['./src/styles/main.scss', './src/styles/app.scss'],
   // destination folder
   dest: './build',
   coverage: './coverage'

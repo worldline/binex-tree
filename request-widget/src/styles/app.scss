@@ -1,0 +1,40 @@
+@import 'variables';
+
+#main {
+  margin-top: 1em;
+  border: 1px solid #ccc;
+  height: 500px;
+  width: 100%;
+}
+
+#error {
+  background-color: $error-color;
+  color: #fff;
+  height: 0;
+  transition: height 250ms;
+  font-family: $label-font;
+
+  &.active {
+    height: 3em;
+    overflow-y: auto;
+  }
+
+  > span {
+    padding: 1em;
+  }
+}
+
+form {
+  font-family: $label-font;
+
+  textarea {
+    padding: .5em;
+    width: 100%;
+    border: none;
+    font-family: $label-font;
+
+    &:hover, &:active, &:focus {
+      background: #eee;
+    }
+  }
+}
