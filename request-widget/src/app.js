@@ -22,4 +22,8 @@ input.property('value', request)
 
 widget.on('change', (data) => {
   input.property('value', generate(data));
+}).on('editNode', (data) => {
+  console.log('Node to edit', data);
+}).on('addToNode', (data) => {
+  console.log('Node to enrich', data);
 });

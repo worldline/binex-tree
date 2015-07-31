@@ -2,6 +2,10 @@ import d3 from 'd3';
 import {translateRequestToTree, assign, translateTreeToRequest} from './utils/tools';
 import * as utils from './utils/svg';
 
+export const timesSVG = '<svg width="1792" height="1792" viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg"><path d="M1490 1322q0 40-28 68l-136 136q-28 28-68 28t-68-28l-294-294-294 294q-28 28-68 28t-68-28l-136-136q-28-28-28-68t28-68l294-294-294-294q-28-28-28-68t28-68l136-136q28-28 68-28t68 28l294 294 294-294q28-28 68-28t68 28l136 136q28 28 28 68t-28 68l-294 294 294 294q28 28 28 68z"/></svg>';
+export const plusSVG = '<svg width="1792" height="1792" viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg"><path d="M1600 736v192q0 40-28 68t-68 28h-416v416q0 40-28 68t-68 28h-192q-40 0-68-28t-28-68v-416h-416q-40 0-68-28t-28-68v-192q0-40 28-68t68-28h416v-416q0-40 28-68t68-28h192q40 0 68 28t28 68v416h416q40 0 68 28t28 68z"/></svg>';
+export const pencilSVG = '<svg width="1792" height="1792" viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg"><path d="M491 1536l91-91-235-235-91 91v107h128v128h107zm523-928q0-22-22-22-10 0-17 7l-542 542q-7 7-7 17 0 22 22 22 10 0 17-7l542-542q7-7 7-17zm-54-192l416 416-832 832h-416v-416zm683 96q0 53-37 90l-166 166-416-416 166-165q36-38 90-38 53 0 91 38l235 234q37 39 37 91z"/></svg>';
+
 /**
  * Add a zoomable g layer inside the tree's svg node.
  * Store into tree's 'zoom' attribute the zoom behavior and into tree's 'grid' attribute the created node
@@ -22,6 +26,8 @@ function makeZoomableGrid(tree) {
       // Eventually, animate the move
       tree.grid.transition().attr('transform', `translate(${d3.event.translate}) scale(${d3.event.scale})`);
     });
+
+  tree.svg.on('click', tree.hideMenu.bind(tree));
 
   tree.grid = tree.svg.call(tree.zoom)
     .append('g')
@@ -65,16 +71,27 @@ function getDimensions(node, hSpacing) {
 }
 
 /**
- * Asynchrnously dispatch a change event (with data as parameter) on a given tree instance
+ * Asynchronously dispatch an event on a given tree instance
+ *
+ * @param {RequestTree} tree - concerned tree instance
+ * @param {String} event - triggered event name
+ * @param {Any[]} args - any argument passed to event.
+ */
+function dispatch(tree, event, ...args) {
+  // Asynchronously dispatch change on data
+  setTimeout(() => {
+    tree[event](...args);
+  }, 0);
+}
+
+/**
+ * Asynchronously dispatch a change event (with data as parameter) on a given tree instance
  *
  * @param {RequestTree} tree - concerned tree instance
  */
 function dispatchChange(tree) {
-  // Asynchronously dispatch change on data
   // TODO check effective change
-  setTimeout(() => {
-    tree.change(translateTreeToRequest(tree.data));
-  }, 0);
+  dispatch(tree, 'change', translateTreeToRequest(tree.data));
 }
 
 /**
@@ -109,10 +126,11 @@ export default class RequestTree {
       initialScale: 0.2,
       scaleExtent: [0.04, 0.5],
       hSpacing: 1.4,
-      vSpacing: 1.1,
+      vSpacing: 1.2,
       animDuration: 1000,
-      dragged: {}
-    }, d3.dispatch('change'), options);
+      dragSensibility: 200,
+      dragged: null
+    }, d3.dispatch('change', 'editNode', 'addToNode'), options);
 
     // Ensure that d3.on returns the current instance.
     let d3On = this.on;
@@ -183,14 +201,21 @@ export default class RequestTree {
     let nodes = this.grid.selectAll('g.node')
       .data(tree, d => d.__id || (d.__id = ++nextId));
 
+    // Because we need D3's this in onDrag function, and access to real this also.
+    let that = this;
+
     // Creates node representation
     nodes.enter()
       .append('g')
       .call(this.dragListener)
+      .on('click', function(d) {
+        that.onClick(d, d3.select(this));
+      })
       .attr('class', 'node');
 
     // For new and existing nodes, update rendering.
     nodes.call(this.renderNode)
+      .attr('data-id', d => d.id)
       .classed('leaf', ({name}) => name !== '$and' && name !== '$or');
 
     // Remove unecessary nodes
@@ -251,6 +276,7 @@ export default class RequestTree {
 
     node.insert('rect', '.decoration')
       .attr('class', 'content')
+      // Do not use fat arrow to have this aiming at current SVGElement
       .each(function(d) {
         let styles = utils.getStyles(this, 'padding-top', 'padding-bottom', 'padding-left', 'padding-right');
 
@@ -278,7 +304,126 @@ export default class RequestTree {
   }
 
   /**
-   * Invoke when starting to drag a node.
+   * Render menu item and positionnate them.
+   * The menu parameter is a SVG group positionnated above the concerned tree node.
+   *
+   * @param {d3.selection} menu - SVGGroupElement in which menu item may be positionnated.
+   * @param {Object} d - data for which the menu must be displayed
+   * @param {Object[]} actions - expected menu items
+   * @param {String} actions.kind - menu item kind: add, edit or delete
+   * @param {Function} actions.handler - function that must be invoked when the menu item is clicked
+   */
+  renderMenu(menu, d, actions) {
+    let container = menu.append('g');
+    let action = container.selectAll('.action').data(actions).enter()
+      .append('g')
+        .attr('class', action => `action ${action.kind}`)
+        .each(function(d) {
+          d3.select(this).on('click', d.handler);
+        });
+
+    let duration = this.animDuration / 2;
+    // Compute final width manually because it will be animated
+    let menuWidth = 0;
+
+    action.html(({kind}) => kind === 'edit' ? pencilSVG : kind === 'add' ? plusSVG : timesSVG);
+    action.select('svg').attr('class', 'text');
+
+    action.insert('rect', '.text')
+      .attr('class', 'background')
+      // Do not use fat arrow to have this aiming at current SVGElement
+      .each(function(d, i) {
+        // Get background dimensions
+        let {width, height, 'margin-right': margin} = utils.getStyles(this, 'width', 'height', 'margin-right');
+        let text = d3.select(this.parentNode).select('.text');
+        let testStyle = utils.getStyles(text.node(), 'padding-top', 'padding-right', 'padding-bottom', 'padding-left');
+
+        d3.select(this)
+          .attr('width', width)
+          .attr('height', height);
+
+        text.attr('width', width - testStyle['padding-right'] - testStyle['padding-left'])
+          .attr('height', height - testStyle['padding-top'] - testStyle['padding-bottom'])
+          .attr('x', testStyle['padding-left'])
+          .attr('y', testStyle['padding-top']);
+
+        menuWidth += width + (i === 0 ? 0 : margin);
+
+        d3.select(this.parentNode)
+          .attr('transform', 'translate(0, 0)')
+          .transition()
+            .duration(duration)
+              .attr('transform', `translate(${i * (width + margin)}, 0)`);
+      });
+
+    // Sizes text to be right placed with a tiny margin
+    let {height} = container.node().getBBox();
+    container.attr('transform', `translate(${(d.width - menuWidth) / 2}, ${(d.height - height) / 2})`);
+  }
+
+  /**
+   * Hide the current menu. Does nothing if no menu is displayed
+   */
+  hideMenu() {
+    if (!this.menu) {
+      return;
+    }
+    // TODO animation ?
+    this.menu.node.remove();
+    this.menu.concerned.classed('menu-origin', false);
+    this.menu = null;
+  }
+
+  /**
+   * Invoked when used left-clicked a given node
+   *
+   * @param {Object} d - clicked subtree data
+   */
+  onClick(d, node) {
+    // Hide previous menu and display new one
+    this.hideMenu();
+
+    // Compute needed menu items
+    let items = [{
+      kind: 'edit',
+      handler: () => dispatch(this, 'editNode', d)
+    }];
+    if (d !== this.data) {
+      // Root element cannot be removed
+      items.push({
+        kind: 'remove',
+        handler: () => {
+          if (d === this.data) {
+            return;
+          }
+          d.parent.children.splice(d.parent.children.indexOf(d), 1);
+          this.update();
+          dispatchChange(this);
+        }
+      });
+    }
+    if (d.name === '$and' || d.name === '$or') {
+      // Only non-leave can have more children
+      items.unshift({
+        kind: 'add',
+        handler: () => dispatch(this, 'addToNode', d)
+      });
+    }
+
+    // Add a group in grid to contain menu items, positionnate at
+    // concerned element's origin
+    this.menu = {
+      node: this.grid.append('g').attr('class', 'menu')
+        .attr('transform', `translate(${d.y}, ${d.x - d.height / 2})`),
+      concerned: node.classed('menu-origin', true)
+    };
+    // And fill the container with menu
+    this.renderMenu(this.menu.node, d, items);
+    d3.event.stopPropagation();
+  }
+
+  /**
+   * Invoked when starting to drag a node.
    * If the dragged node is not root, initiate inner state (`this.dragged`),
    * highlight possible drop zone (other non-leaf nodes) and bind listener on them
    *
@@ -290,9 +435,10 @@ export default class RequestTree {
       // Do not drag the root itself
       return;
     }
-    // Use a timeout to discard drag'n drop operation that are faster than 50ms
+    // Use a timeout to discard drag'n drop operation that are faster than X ms
     this.discardedDrag = setTimeout(() => {
       this.discardedDrag = null;
+      this.hideMenu();
       // Keep dragged element and its parent
       this.dragged = {
         node: node.classed('dragged', true),
@@ -304,8 +450,9 @@ export default class RequestTree {
       this.update();
       // And replace dragged node only
       this.grid.classed('drag-in-progress', true)
-        .append(() => node.node());
+        .node().appendChild(node.node());
 
+      // Because we need D3's this in onDrag function, and access to real this also.
       let that = this;
       // Highlight possible drop zone
       d3.selectAll('.node:not(.leaf):not(.dragged)')
@@ -318,13 +465,13 @@ export default class RequestTree {
           this.dragged.drop.classed('selected', false);
           this.dragged.drop = null;
         });
-    }, 50);
+    }, this.dragSensibility);
     // Temporary disable whole tree zoom behaviour
     d3.event.sourceEvent.stopPropagation();
   }
 
   /**
-   * Invoke when dragging a given node.
+   * Invoked when dragging a given node.
    * Moves the dragged object, using d3.event.
    *
    * @param {Object} d - dragged subtree data
@@ -340,7 +487,7 @@ export default class RequestTree {
   }
 
   /**
-   * Invoke when a dragged node is dropped.
+   * Invoked when a dragged node is dropped.
    * If drop over an acceptable drop zone (`this.dragged.drop`), move the subtree.
    * Otherwise, reverd dragged subtree to its original location (`this.dragged.parent`).
    * Update rendering to reflect results

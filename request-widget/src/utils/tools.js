@@ -6,11 +6,16 @@
  */
 export function translateRequestToTree(request) {
   let keys = Object.keys(request);
-  if (['$or', '$and'].indexOf(keys[0]) !== -1) {
-    return {
-      name: keys[0],
-      children: request[keys[0]].map(translateRequestToTree)
-    };
+  let isAnd = keys.indexOf('$and') >= 0;
+  let isOr = keys.indexOf('$or') >= 0;
+  if (isAnd || isOr) {
+    let key = isAnd ? '$and' : '$or';
+    let result = assign({
+      name: key,
+      children: request[key].map(translateRequestToTree)
+    }, request);
+    delete result[key];
+    return result;
   }
   return request;
 }

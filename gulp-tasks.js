@@ -10,6 +10,7 @@ var Instrumenter = require('isparta').Instrumenter;
 var _ = require('lodash');
 // for mocha to understand esNext
 require('babel-core/register');
+require('source-map-support').install();
 
 // Coverage thresholds: bellow first is error, bellow second is warning
 var defaultThresholds = {
