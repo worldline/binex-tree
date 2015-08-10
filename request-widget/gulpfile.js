@@ -1,4 +1,5 @@
 var gulp = require('gulp');
+var gutil = require('gulp-util');
 var tasks = require('../gulp-tasks');
 var runSequence = require('run-sequence');
 var sourcemaps = require('gulp-sourcemaps');
@@ -8,7 +9,8 @@ var karma = require('karma').server;
 var path = require('path');
 var _ = require('lodash');
 var webpack = require('webpack');
-
+var log = gutil.log;
+var colors = gutil.colors;
 
 // Single path declarations
 var paths = {
@@ -58,7 +60,7 @@ var conf = {
       }],
       loaders: [{
         test: /\.js$/,
-        exclude: /node_modules/,
+        exclude: /node_modules|common/,
         loader: 'babel-loader'
       }]
     }
@@ -81,30 +83,46 @@ var conf = {
 conf.preprocessors[paths.tests] = ['webpack', 'sourcemap'];
 
 // Thrn 'bundle' task gets all compiled scripts and bundle them for System.js
-gulp.task('bundle', ['lint'], function (done) {
-  webpack(_.assign({}, {
-    entry: path.resolve(paths.source, paths.sourcesMain),
-    output: {
-      path: path.resolve(paths.dest),
-      filename: paths.sourcesMain,
-      devtoolModuleFilenameTemplate: '[resource-path]'
-    },
-    devtool: 'source-map',
-    debug: false,
-    module: {
-      loaders: [{
-        test: /\.js$/,
-        exclude: /node_modules/,
-        loader: 'babel-loader'
-      }]
-    },
-    resolve: {
-      extensions: ['', '.js']
+gulp.task('bundle', ['lint'], bundle(false));
+
+var bundler = webpack(_.assign({}, {
+  entry: path.resolve(paths.source, paths.sourcesMain),
+  output: {
+    path: path.resolve(paths.dest),
+    filename: paths.sourcesMain,
+    devtoolModuleFilenameTemplate: '[resource-path]'
+  },
+  devtool: 'source-map',
+  debug: false,
+  module: {
+    loaders: [{
+      test: /\.js$/,
+      exclude: /node_modules|common/,
+      loader: 'babel-loader'
+    }]
+  },
+  resolve: {
+    extensions: ['', '.js']
+  }
+}/*, {
+  plugins: [new (require('webpack/lib/optimize/UglifyJsPlugin'))()]
+}*/));
+
+function bundle(watch) {
+  return function(done) {
+    if (watch) {
+      bundler.watch({}, function (err, stats) {
+        stats = stats.toJson({
+          cached: false,
+        }).modules.forEach(function (module) {
+          log(module.name + colors.cyan(' rebuilt'));
+        });
+      });
+    } else {
+      bundler.run(done);
     }
-  }/*, {
-    plugins: [new (require('webpack/lib/optimize/UglifyJsPlugin'))()]
-  }*/), done);
-});
+  };
+}
 
 gulp.task('styles', function() {
   return gulp.src(paths.stylesMain)
@@ -139,6 +157,7 @@ gulp.task('build', function(done) {
 
 // Default development task is to build, then to watch for files changes.
 gulp.task('default', ['build'], function() {
+  bundle(true)();
   gulp.src('.')
     .pipe(webserver({
       livereload: {
@@ -149,6 +168,5 @@ gulp.task('default', ['build'], function() {
         }
       }
     }));
-  gulp.watch(paths.sources, ['bundle']);
   gulp.watch(paths.styles, ['styles']);
 });

@@ -1,4 +1,5 @@
 var gutil = require('gulp-util');
+var gif = require('gulp-if');
 var babel = require('gulp-babel');
 var prepend = require('gulp-insert').prepend;
 var eslint = require('gulp-eslint');
@@ -50,14 +51,16 @@ exports.clean = function(gulp, toRemove) {
  * @param {Object} gulp - gulp instance
  * @param {String|String[]} sources - globs used to read esNext source files
  * @param {String} dest - destination folder for es5 files
+ * @param {Boolean = false} clientSide - true if the build is intended for client side.
+ * In this case, "source-map-support" node module won't be included.
  */
-exports.build = function(gulp, sources, dest) {
+exports.build = function(gulp, sources, dest, clientSide) {
   gulp.task('build', ['clean', 'lint'], function() {
     return gulp.src(sources)
       .pipe(sourcemaps.init())
       .pipe(babel())
-      // to have explicit staccktraces with esNext files line numbers
-      .pipe(prepend('require("source-map-support/register");'))
+      // to have explicit staccktraces with esNext files line numbers, but on ly for server side
+      .pipe(gif(!clientSide, prepend('require("source-map-support/register");')))
       .on('error', function(err) {
         gutil.beep();
         gutil.log(err.message);

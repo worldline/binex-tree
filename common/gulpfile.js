@@ -13,7 +13,7 @@ var paths = {
 tasks.clean(gulp, [paths.dest].concat(paths.coverage));
 tasks.test(gulp, paths.sources, paths.tests, paths.ciOutput, paths.coverage);
 tasks.lint(gulp, paths.sources, paths.tests);
-tasks.build(gulp, paths.sources, paths.dest);
+tasks.build(gulp, paths.sources, paths.dest, true);
 tasks.testWatch(gulp, paths.sources, paths.tests);
 tasks.buildWatch(gulp, paths.sources);
 gulp.task('default', ['buildWatch']);
