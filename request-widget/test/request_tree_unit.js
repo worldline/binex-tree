@@ -1,9 +1,11 @@
 import d3 from 'd3';
 import RequestTree from '../src/request_tree';
+import {extractNodes} from './utils/test_utilities';
+import {parse} from 'targeting-engine-common';
 const expect = chai.expect;
 chai.config.truncateThreshold = 0;
-import {parse} from '../../common/src/grammar_parser';
 
+<<<<<<< HEAD
 describe('Request Tree unit tests', () => {
 
   /**
@@ -42,6 +44,9 @@ describe('Request Tree unit tests', () => {
     }
     return data;
   }
+=======
+describe('Request Tree', () => {
+>>>>>>> 4fea375... Add test for drag'n drop operations
 
   /**
    * Function to be called inside an Array.reduce to get hightest number

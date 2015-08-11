@@ -1,6 +1,6 @@
 import d3 from 'd3';
 import {translateRequestToTree, assign, translateTreeToRequest} from '../../src/utils/tools';
-import {parse} from '../../../common/src/grammar_parser';
+import {parse} from 'targeting-engine-common';
 const expect = chai.expect;
 chai.config.truncateThreshold = 0;
 

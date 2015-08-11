@@ -18,7 +18,8 @@ var paths = {
   source: './src',
   // all ES6 files to be linted watched
   sources: './src/**/*.js',
-  tests: './test/**/*.js',
+  // exception: test utilities must not be served by karma
+  tests: './test/**/!(test_utilities)*.js',
   // entry point for sources
   sourcesMain: 'app.js',
   // all scss files to be watched
@@ -38,7 +39,11 @@ var conf = {
   configFile: '',
   basePath: './',
   frameworks: ['html-prepend', 'mocha', 'chai'],
-  files: [paths.tests],
+  files: [
+    paths.tests,
+    path.resolve(paths.dest, 'main.css'),
+    'node_modules/babel-core/browser-polyfill.js'
+  ],
   // Will be configured just after
   preprocessors: {},
   coverageReporter: {
@@ -75,6 +80,7 @@ var conf = {
     'karma-chrome-launcher',
     'karma-firefox-launcher',
     'karma-mocha',
+    'karma-phantomjs-launcher',
     'karma-sourcemap-loader',
     'karma-webpack',
     require('./test/html-prepend')

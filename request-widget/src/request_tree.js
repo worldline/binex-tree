@@ -128,9 +128,14 @@ export default class RequestTree {
       hSpacing: 1.4,
       vSpacing: 1.2,
       animDuration: 1000,
+<<<<<<< HEAD
       dragSensibility: 200,
       dragged: null
     }, d3.dispatch('change', 'editNode', 'addToNode'), options);
+=======
+      dragged: null
+    }, d3.dispatch('change'), options);
+>>>>>>> 4fea375... Add test for drag'n drop operations
 
     // Ensure that d3.on returns the current instance.
     let d3On = this.on;
@@ -161,10 +166,10 @@ export default class RequestTree {
     // Drag'n drop listener used to move nodes
     this.dragListener = d3.behavior.drag()
       .on('dragstart', function(d) {
-        that.onDragStart(d3.select(this), d);
+        that.onDragStart(d3.event, d, d3.select(this));
       })
-      .on('drag', this.onDrag.bind(this))
-      .on('dragend', this.onDrop.bind(this));
+      .on('drag', d => this.onDrag(d3.event, d))
+      .on('dragend', d => this.onDrop(d3.event, d));
 
     // Initialize request
     this.data = {};
@@ -215,7 +220,11 @@ export default class RequestTree {
 
     // For new and existing nodes, update rendering.
     nodes.call(this.renderNode)
+<<<<<<< HEAD
       .attr('data-id', d => d.id)
+=======
+      .attr('data-id', d => d.__id)
+>>>>>>> 4fea375... Add test for drag'n drop operations
       .classed('leaf', ({name}) => name !== '$and' && name !== '$or');
 
     // Remove unecessary nodes
@@ -427,10 +436,11 @@ export default class RequestTree {
    * If the dragged node is not root, initiate inner state (`this.dragged`),
    * highlight possible drop zone (other non-leaf nodes) and bind listener on them
    *
-   * @param {d3.selection} node - dragged SVG node
+   * @param {d3.event} evt - current event
    * @param {Object} d - dragged subtree data
+   * @param {d3.selection} node - dragged SVG node
    */
-  onDragStart(node, d) {
+  onDragStart(evt, d, node) {
     if (d === this.data) {
       // Do not drag the root itself
       return;
@@ -452,49 +462,61 @@ export default class RequestTree {
       this.grid.classed('drag-in-progress', true)
         .node().appendChild(node.node());
 
+<<<<<<< HEAD
       // Because we need D3's this in onDrag function, and access to real this also.
       let that = this;
+=======
+>>>>>>> 4fea375... Add test for drag'n drop operations
       // Highlight possible drop zone
       d3.selectAll('.node:not(.leaf):not(.dragged)')
         .classed('droppable', true)
         .on('mouseover', function() {
-          that.dragged.drop = d3.select(this)
-            .classed('selected', true);
+          d3.select(this).classed('selected', true);
         })
         .on('mouseout', () => {
-          this.dragged.drop.classed('selected', false);
-          this.dragged.drop = null;
+          this.svg.selectAll('.selected').classed('selected', false);
         });
+<<<<<<< HEAD
     }, this.dragSensibility);
+=======
+    }, 150);
+>>>>>>> 4fea375... Add test for drag'n drop operations
     // Temporary disable whole tree zoom behaviour
-    d3.event.sourceEvent.stopPropagation();
+    evt.sourceEvent.stopPropagation();
   }
 
   /**
    * Invoked when dragging a given node.
    * Moves the dragged object, using d3.event.
    *
+   * @param {d3.event} evt - current event
    * @param {Object} d - dragged subtree data
    */
-  onDrag(d) {
+  onDrag({dx, dy}, d) {
     if (!this.dragged) {
       return false;
     }
     // Moves dragged element under mouse
-    d.x += d3.event.dy;
-    d.y += d3.event.dx;
+    d.x += dy;
+    d.y += dx;
     this.dragged.node.attr('transform', `translate(${d.y},${d.x})`);
   }
 
   /**
+<<<<<<< HEAD
    * Invoked when a dragged node is dropped.
    * If drop over an acceptable drop zone (`this.dragged.drop`), move the subtree.
+=======
+   * Invoke when a dragged node is dropped.
+   * If drop over an acceptable drop zone (a droppable node with selected class), move the subtree.
+>>>>>>> 4fea375... Add test for drag'n drop operations
    * Otherwise, reverd dragged subtree to its original location (`this.dragged.parent`).
    * Update rendering to reflect results
    *
+   * @param {d3.event} evt - current event
    * @param {Object} d - dragged subtree data
    */
-  onDrop(d) {
+  onDrop(evt, d) {
     if (this.discardedDrag) {
       clearTimeout(this.discardedDrag);
       return;
@@ -502,6 +524,7 @@ export default class RequestTree {
     if (!this.dragged) {
       return;
     }
+    let drop = this.svg.select('.droppable.selected');
     // Removes temporary drag classes and drop zone listener
     d3.selectAll('.droppable')
       .classed('droppable', false)
@@ -510,10 +533,10 @@ export default class RequestTree {
     this.dragged.node.classed('dragged', false);
     this.grid.classed('drag-in-progress', false);
 
-    if (this.dragged.drop) {
+    if (!drop.empty()) {
       // If element was dropped on possible drop zone, add it to children
-      this.dragged.drop.classed('selected', false);
-      let parent = this.dragged.drop.datum();
+      drop.classed('selected', false);
+      let parent = drop.datum();
       if (!Array.isArray(parent.children)) {
         // Case of drop node is empty
         parent.children = [];
