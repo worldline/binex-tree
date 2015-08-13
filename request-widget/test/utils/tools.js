@@ -1,8 +1,44 @@
 import d3 from 'd3';
-import {translateRequestToTree, assign, translateTreeToRequest} from '../../src/utils/tools';
+import {translateRequestToTree, assign, translateTreeToRequest, formatNumber} from '../../src/utils/tools';
 import {parse} from 'targeting-engine-common';
 const expect = chai.expect;
 chai.config.truncateThreshold = 0;
+
+describe('formatNumber', () => {
+
+  it('should not fail when given a string', () => {
+    let str = 'coucou';
+    expect(formatNumber(str)).to.equals(str);
+  });
+
+  it('should not fail when given null', () => {
+    expect(formatNumber(null)).to.be.null;
+  });
+
+  it('should not fail when given undefined', () => {
+    expect(formatNumber()).to.be.undefined;
+  });
+
+  it('should change nothing it number is bellow 1000', () => {
+    expect(formatNumber(999)).to.equals('999');
+  });
+
+  it('should add separator on every thousand', () => {
+    expect(formatNumber(1234567890)).to.equals('1 234 567 890');
+  });
+
+  it('should set a specific thousand parameter', () => {
+    expect(formatNumber(987654321, ',')).to.equals('987,654,321');
+  });
+
+  it('should handle negative values', () => {
+    expect(formatNumber(-10001)).to.equals('-10 001');
+  });
+
+  it('should truncate decimals', () => {
+    expect(formatNumber(1234.56)).to.equals('1 234');
+  });
+});
 
 describe('translateRequestToTree', () => {
 

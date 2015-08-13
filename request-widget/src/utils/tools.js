@@ -65,3 +65,17 @@ export function assign(target, ...sources) {
   });
   return target;
 }
+
+/**
+ * Format a given natural integer by adding thousand serparators.
+ * Decimals and negative numbers are not supported.
+ * @param {Number} number - formatted number
+ * @param {String = ' '} separator - thousand separator used
+ * @return {String} the formatted number
+ */
+export function formatNumber(number, separator = ' ') {
+  if (isNaN(parseInt(number))) {
+    return number;
+  }
+  return Math.floor(+number).toString().split('').reverse().reduce((res, digit, i) => digit + (i > 0 && i % 3 === 0 ? separator : '' ) + res);
+}

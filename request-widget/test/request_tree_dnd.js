@@ -7,14 +7,24 @@ chai.config.truncateThreshold = 0;
 
 describe('Request Tree drag\'n drop', function () {
   this.timeout(5000);
+<<<<<<< HEAD
   let animDuration = 100;
+=======
+
+  // Default values for widget construction
+  let animDuration = 10;
+  let options = {
+    animDuration,
+    fetch: (d, done) => done(null, 0)
+  };
+>>>>>>> 4d47159... Implement and test node's result fetching
 
   beforeEach(() => {
     d3.select('#main').html('');
   });
 
   it('should revert aborted drag', done => {
-    let tree = new RequestTree('#main', parse('f1 [value = "something long"] && (age [value < 7] || age [value > 77])'), {animDuration});
+    let tree = new RequestTree('#main', parse('f1 [value = "something long"] && (age [value < 7] || age [value > 77])'), options);
     let changeTriggered = false;
     expect(tree).to.have.property('data');
 
@@ -39,7 +49,7 @@ describe('Request Tree drag\'n drop', function () {
   });
 
   it('should move a leaf into root node', done => {
-    let tree = new RequestTree('#main', parse('(f1[value=1] || f2[value=2]) && (f3[value=3] || f4[value=4])'), {animDuration});
+    let tree = new RequestTree('#main', parse('(f1[value=1] || f2[value=2]) && (f3[value=3] || f4[value=4])'), options);
     let changeTriggered = false;
     expect(tree).to.have.property('data');
 
@@ -66,7 +76,7 @@ describe('Request Tree drag\'n drop', function () {
   });
 
   it('should move a leaf into another node', done => {
-    let tree = new RequestTree('#main', parse('f1[value=1] || (f3[value=3] && f4[value=4])'), {animDuration});
+    let tree = new RequestTree('#main', parse('f1[value=1] || (f3[value=3] && f4[value=4])'), options);
     let changeTriggered = false;
     expect(tree).to.have.property('data');
 
@@ -93,7 +103,7 @@ describe('Request Tree drag\'n drop', function () {
   });
 
   it('should not move a root node', done => {
-    let tree = new RequestTree('#main', parse('f1[value=1] || f2[value=2]'), {animDuration});
+    let tree = new RequestTree('#main', parse('f1[value=1] || f2[value=2]'), options);
     let changeTriggered = false;
     expect(tree).to.have.property('data');
 
@@ -116,7 +126,7 @@ describe('Request Tree drag\'n drop', function () {
   });
 
   it('should not move leaf into another leaf', done => {
-    let tree = new RequestTree('#main', parse('f1[value=1] || f2[value=2]'), {animDuration});
+    let tree = new RequestTree('#main', parse('f1[value=1] || f2[value=2]'), options);
     let changeTriggered = false;
     expect(tree).to.have.property('data');
 
@@ -142,7 +152,7 @@ describe('Request Tree drag\'n drop', function () {
   });
 
   it('should not consider small movement as drag operations', done => {
-    let tree = new RequestTree('#main', parse('f1[value=1] || f2[value=2]'), {animDuration});
+    let tree = new RequestTree('#main', parse('f1[value=1] || f2[value=2]'), options);
     expect(tree).not.to.have.property('discardedDrag');
     let changeTriggered = false;
     // Wait for layout animation
@@ -159,7 +169,7 @@ describe('Request Tree drag\'n drop', function () {
   });
 
   it('should keep ordering when aborting the operation', done => {
-    let tree = new RequestTree('#main', parse('f1[value=1] && f2[value=2] && f3[value=3]'), {animDuration});
+    let tree = new RequestTree('#main', parse('f1[value=1] && f2[value=2] && f3[value=3]'), options);
     let changeTriggered = false;
     expect(tree).to.have.property('data');
 
@@ -186,7 +196,7 @@ describe('Request Tree drag\'n drop', function () {
   });
 
   it('should ignore drag event without drag start', done => {
-    let tree = new RequestTree('#main', parse('f1[value=1] && f2[value=2] && f3[value=3]'), {animDuration});
+    let tree = new RequestTree('#main', parse('f1[value=1] && f2[value=2] && f3[value=3]'), options);
     // Wait for layout animation
     setTimeout(() => {
       expect(() => tree.onDrag({}, tree.data)).not.to.throw(Error);
@@ -195,7 +205,7 @@ describe('Request Tree drag\'n drop', function () {
   });
 
   it('should ignore drop event without drag start', done => {
-    let tree = new RequestTree('#main', parse('f1[value=1] && f2[value=2] && f3[value=3]'), {animDuration});
+    let tree = new RequestTree('#main', parse('f1[value=1] && f2[value=2] && f3[value=3]'), options);
     // Wait for layout animation
     setTimeout(() => {
       expect(() => tree.onDrop({}, tree.data)).not.to.throw(Error);

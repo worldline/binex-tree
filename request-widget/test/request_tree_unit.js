@@ -1,6 +1,7 @@
 import d3 from 'd3';
 import RequestTree from '../src/request_tree';
-import {extractNodes} from './utils/test_utilities';
+import {extractNodes, addIds} from './utils/test_utilities';
+import {formatNumber} from '../src/utils/tools';
 import {parse} from 'targeting-engine-common';
 const expect = chai.expect;
 chai.config.truncateThreshold = 0;
@@ -174,6 +175,7 @@ describe('Request Tree', () => {
     expect(column3[0].y).to.closeTo(column2[0].y + largestColum2 * 1.4, 1);
   });
 
+<<<<<<< HEAD
   it('should menu not include removal for root', () => {
     /* eslint no-new: 0 */
     new RequestTree('#main', addIds(parse('f1 [value = "something long"]')));
@@ -232,5 +234,70 @@ describe('Request Tree', () => {
     expect(d3.select('.menu').empty(), 'no menu found').to.be.false;
     tree.svg.node().dispatchEvent(new MouseEvent('click'));
     expect(d3.select('.menu').empty(), 'menu still visible').to.be.true;
+=======
+  it('should customize text formating', () => {
+    let tree = new RequestTree('#main', addIds(parse('f1 [value = "something long"] && age [value < 7]')), {
+      format: (d) => `prefix_${d.name}`
+    });
+    let node = tree.svg.select('[data-id="f1"] > .text');
+    expect(node.empty(), 'f1 not found').to.be.false;
+    expect(node.text()).to.equal('prefix_f1');
+
+    node = tree.svg.select('[data-id="age"] > .text');
+    expect(node.empty(), 'age not found').to.be.false;
+    expect(node.text()).to.equal('prefix_age');
+  });
+
+  it('should customize values fetching and formatting', () => {
+    let values = {
+      f1: 1000,
+      age: 500,
+      '1': 1200
+    };
+    let thousandSeparator = '.';
+    let tree = new RequestTree('#main', addIds(parse('f1 [value = "something long"] && age [value < 7]')), {
+      fetch: (d, done) => done(null, values[d.id]),
+      thousandSeparator
+    });
+
+    let node = tree.svg.select('[data-id="age"] > .value');
+    expect(node.empty(), 'age value not found').to.be.false;
+    expect(node.text()).to.equal(formatNumber(values.age, thousandSeparator));
+
+    node = tree.svg.select('[data-id="1"] > .value');
+    expect(node.empty(), '$and value not found').to.be.false;
+    expect(node.text()).to.equal(formatNumber(values['1'], thousandSeparator));
+
+    node = tree.svg.select('[data-id="f1"] > .value');
+    expect(node.empty(), 'f1 value not found').to.be.false;
+    expect(node.text()).to.equal(formatNumber(values.f1, thousandSeparator));
+  });
+
+  it('should handle values fetching errors', () => {
+    let values = {
+      f1: 1000,
+      age: 500
+    };
+    let tree = new RequestTree('#main', addIds(parse('f1 [value = "something long"] && age [value < 7]')), {
+      fetch: (d, done) => {
+        if (values[d.id]) {
+          return done(null, values[d.name]);
+        }
+        done(new Error(`value not found for ${d.id}`));
+      }
+    });
+
+    let node = tree.svg.select('[data-id="age"] > .value');
+    expect(node.empty(), 'age value not found').to.be.false;
+    expect(node.text()).to.equal(formatNumber(values.age, ','));
+
+    node = tree.svg.select('[data-id="1"] > .value');
+    expect(node.empty(), '$and value not found').to.be.false;
+    expect(node.text()).to.equal('0');
+
+    node = tree.svg.select('[data-id="f1"] > .value');
+    expect(node.empty(), 'f1 value not found').to.be.false;
+    expect(node.text()).to.equal(formatNumber(values.f1, ','));
+>>>>>>> 4d47159... Implement and test node's result fetching
   });
 });

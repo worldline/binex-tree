@@ -1,6 +1,6 @@
 import d3 from 'd3';
-import {translateRequestToTree, assign, translateTreeToRequest} from './utils/tools';
-import * as utils from './utils/svg';
+import * as utils from './utils/tools';
+import {getStyles} from './utils/svg';
 
 export const timesSVG = '<svg width="1792" height="1792" viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg"><path d="M1490 1322q0 40-28 68l-136 136q-28 28-68 28t-68-28l-294-294-294 294q-28 28-68 28t-68-28l-136-136q-28-28-28-68t28-68l294-294-294-294q-28-28-28-68t28-68l136-136q28-28 68-28t68 28l294 294 294-294q28-28 68-28t68 28l136 136q28 28 28 68t-28 68l-294 294 294 294q28 28 28 68z"/></svg>';
 export const plusSVG = '<svg width="1792" height="1792" viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg"><path d="M1600 736v192q0 40-28 68t-68 28h-416v416q0 40-28 68t-68 28h-192q-40 0-68-28t-28-68v-416h-416q-40 0-68-28t-28-68v-192q0-40 28-68t68-28h416v-416q0-40 28-68t68-28h192q40 0 68 28t28 68v416h416q40 0 68 28t28 68z"/></svg>';
@@ -91,7 +91,7 @@ function dispatch(tree, event, ...args) {
  */
 function dispatchChange(tree) {
   // TODO check effective change
-  dispatch(tree, 'change', translateTreeToRequest(tree.data));
+  dispatch(tree, 'change', utils.translateTreeToRequest(tree.data));
 }
 
 /**
@@ -120,7 +120,7 @@ export default class RequestTree {
 
     // Copy options, defaults, and override them with parameters.
     // Also makes the instance an event dispatcher.
-    assign(this, {
+    utils.assign(this, {
       ratio: 16 / 9,
       width: 500,
       initialScale: 0.2,
@@ -130,12 +130,52 @@ export default class RequestTree {
       animDuration: 1000,
 <<<<<<< HEAD
       dragSensibility: 200,
-      dragged: null
+      dragged: null,
+      thousandSeparator: ',',
+      /**
+       * Function used to format node and get a textual value
+       * @param {Object} data - the node data to be displayed
+       * @return {String} a textual representation used for this node
+       */
+      format: data => data.name + (data.value ? ` ${data.value.operator} ${data.value.operand}` : ''),
+
+      /**
+       * Function used to retrieve a given node's numerical value, corresponding to the
+       * request results.
+       * @param {Object} data - data for which request result are fetched
+       * @param {Function} done - completion callback to invoke when data are available, with parameters:
+       * @param {Error} done.err - an error object if fetching failed, null otherwise
+       * @param {Number} done.result - the numerical result for this node
+       */
+      fetch: function (data, done) {
+        setTimeout(() => {
+          done(null, Math.floor(Math.random() * 80000000) + 2000000);
+        }, Math.floor(Math.random() * 1000));
+      },
+
+      /**
+       * Because some browsers (namely IE) does not support some SVG styles, these hardcoded values are used
+       * as fallback.
+       * CSS class names (no separator, alphabetically ordered) are used to set styles
+       * CSS properties must be exploded, no shortcut are available.
+       */
+      styles: {
+        '.value': {
+          'padding-top': 4,
+          'padding-bottom': 4,
+          'padding-left': 8
+        },
+        '.decoration': {
+          width: 8
+        }
+      }
     }, d3.dispatch('change', 'editNode', 'addToNode'), options);
 =======
       dragged: null
     }, d3.dispatch('change'), options);
 >>>>>>> 4fea375... Add test for drag'n drop operations
+
+    this.fetching = 0;
 
     // Ensure that d3.on returns the current instance.
     let d3On = this.on;
@@ -187,7 +227,7 @@ export default class RequestTree {
    */
   setRequest(request) {
     // Parse displayed request. Will throw error if invalid
-    this.data = translateRequestToTree(request);
+    this.data = utils.translateRequestToTree(request);
     this.update();
     dispatchChange(this);
   }
@@ -219,23 +259,38 @@ export default class RequestTree {
       .attr('class', 'node');
 
     // For new and existing nodes, update rendering.
+<<<<<<< HEAD
     nodes.call(this.renderNode)
 <<<<<<< HEAD
       .attr('data-id', d => d.id)
 =======
       .attr('data-id', d => d.__id)
 >>>>>>> 4fea375... Add test for drag'n drop operations
+=======
+    nodes.call(this.renderNode.bind(this))
+      .attr('data-id', d => d.id || d.__id)
+>>>>>>> 4d47159... Implement and test node's result fetching
       .classed('leaf', ({name}) => name !== '$and' && name !== '$or');
 
     // Remove unecessary nodes
     nodes.exit().remove();
+
+    this.layout();
+  }
+
+  /**
+   * Simply layout existing nodes to align them and use available space.
+   * Redraw all links
+   */
+  layout() {
+    let nodes = this.grid.selectAll('g.node');
 
     // Search for biggest node, and individual column width
     let {biggest, columns} = getDimensions(nodes, this.hSpacing);
 
     // Then we layout again taking the node size into acocunt.
     let layout = d3.layout.tree().nodeSize([biggest.height * this.vSpacing, biggest.width]);
-    layout.nodes(this.data);
+    let tree = layout.nodes(this.data);
 
     // once each column was processed, for all nodes, compute y (wich is the inverted x) and positionnate with animation
     nodes.each(d => d.y = columns.reduce((sum, width, i) => sum + (i < d.depth ? width : 0), 0))
@@ -253,9 +308,11 @@ export default class RequestTree {
       .insert('path', 'g')
       .attr('class', 'link')
       .attr('d', ({source: {x0: x = 0, y0: y = 0}}) => elbow({source: {x, y, depth: 0}, target: {x, y, depth: 0}}));
+
     link.transition()
       .duration(this.animDuration)
       .attr('d', elbow);
+
     link.exit().remove();
   }
 
@@ -266,31 +323,37 @@ export default class RequestTree {
    * @param {d3.selection} node - currently represented d3 selection
    */
   renderNode(node) {
+    // We need both access to tree instance and current node
+    let that = this;
+
     // Remove previous content
-    node.html('');
+    node.text('');
 
     node.append('text')
       .attr('class', 'text')
-      .text(d => d.name + (d.value ? ` ${d.value.operator} ${d.value.operand}` : ''));
+      .text(this.format);
 
     node.insert('rect', '.text')
       .attr('class', 'decoration')
       // Do not use fat arrow to have this aiming at current SVGElement
       .each(function() {
-        let {width} = utils.getStyles(this, 'width');
+        let {width} = getStyles(this, that.styles, 'width');
         if (width > 0) {
           d3.select(this).attr('width', width);
         }
       });
 
+
     node.insert('rect', '.decoration')
       .attr('class', 'content')
       // Do not use fat arrow to have this aiming at current SVGElement
       .each(function(d) {
-        let styles = utils.getStyles(this, 'padding-top', 'padding-bottom', 'padding-left', 'padding-right');
+        let styles = getStyles(this, that.styles, 'padding-top', 'padding-bottom', 'padding-left', 'padding-right');
+
+        let parent = d3.select(this.parentNode);
 
         // Get text dimension
-        let text = d3.select(this.parentNode).select('.text');
+        let text = parent.select('.text');
         let {width, height} = text.node().getBBox();
 
         // Resize the rect to wrap text, including padding
@@ -306,10 +369,39 @@ export default class RequestTree {
         text.attr('x', styles['padding-left'])
           .attr('y', d.height / 2 - styles['padding-top']);
 
-        d3.select(this.parentNode).select('.decoration')
+        parent.select('.decoration')
           .attr('height', d.height)
           .attr('y', -d.height / 2);
+
+        // Ask for value to be rendered
+        that.fetchNodeValue(parent);
       });
+
+    // Render an empty node value to make space reservation
+    node.each(function() {
+      that.renderNodeValue(d3.select(this));
+    });
+  }
+
+  renderNodeValue(node, value = null) {
+    let d = node.datum();
+
+    node.select('.value').remove();
+    node.select('.value-decoration').remove();
+
+
+    let text = node.append('text')
+      .attr('class', 'value')
+      .text(utils.formatNumber(value || d.__value || 0, this.thousandSeparator));
+
+    let styles = getStyles(text, this.styles, 'padding-top', 'padding-bottom', 'padding-left');
+
+    text.attr('y', d.height / 2 + styles['padding-top'])
+      .attr('x', styles['padding-left']);
+
+    node.append('path')
+      .attr('class', 'value-decoration')
+      .attr('d', `M0,${d.height / 2}v${text.node().getBBox().height + styles['padding-top'] + styles['padding-bottom']}`);
   }
 
   /**
@@ -342,10 +434,21 @@ export default class RequestTree {
       .attr('class', 'background')
       // Do not use fat arrow to have this aiming at current SVGElement
       .each(function(d, i) {
+<<<<<<< HEAD
         // Get background dimensions
         let {width, height, 'margin-right': margin} = utils.getStyles(this, 'width', 'height', 'margin-right');
+=======
+        // Get background dimensions. Unfortunately browser do not have the same behaviour regarding width/height
+        let {width, height, 'margin-right': margin} = getStyles(this, this.styles, 'width', 'height', 'margin-right');
+        // If dimensions can't be inferred from CSS, use the classical bounding box
+        if (isNaN(width) || isNaN(height)) {
+          let box = this.getBBox();
+          width = box.width;
+          height = box.height;
+        }
+>>>>>>> 4d47159... Implement and test node's result fetching
         let text = d3.select(this.parentNode).select('.text');
-        let testStyle = utils.getStyles(text.node(), 'padding-top', 'padding-right', 'padding-bottom', 'padding-left');
+        let testStyle = getStyles(text.node(), this.styles, 'padding-top', 'padding-right', 'padding-bottom', 'padding-left');
 
         d3.select(this)
           .attr('width', width)
@@ -368,6 +471,33 @@ export default class RequestTree {
     // Sizes text to be right placed with a tiny margin
     let {height} = container.node().getBBox();
     container.attr('transform', `translate(${(d.width - menuWidth) / 2}, ${(d.height - height) / 2})`);
+  }
+
+  /**
+   * For a given node, gets the corresponding request's result, and display them.
+   * Updates the node layout
+   *
+   * @param {d3.selection} node - node for which results are fetched
+   * @param {Function} done - completion callback, invoked when results are displayed, with parameters:
+   * @param {Error} done.err - optionnal error object if results can't be retrieved.
+   */
+  fetchNodeValue(node) {
+    // delay until animation is finished
+    let data = node.datum();
+    this.fetching++;
+    this.fetch(data, (err, value) => {
+      this.fetching--;
+      if (err) {
+        return console.error(`failed to fetch node value for ${data.name} (${data.id || data.__id})`, err);
+      }
+      // Keep value for further refresh
+      data.__value = value;
+      // Render value and if no more fetch is pending, re-layout the whole
+      this.renderNodeValue(node, value);
+      if (this.fetching === 0) {
+        this.layout();
+      }
+    });
   }
 
   /**
@@ -450,23 +580,23 @@ export default class RequestTree {
       this.discardedDrag = null;
       this.hideMenu();
       // Keep dragged element and its parent
-      this.dragged = {
-        node: node.classed('dragged', true),
-        parent: d.parent,
-        idx: d.parent.children.indexOf(d)
-      };
-      // Removes sub tree from data
-      d.parent.children.splice(this.dragged.idx, 1);
-      this.update();
-      // And replace dragged node only
+      this.dragged = node.classed('dragged', true);
+
+      // Replace dragged node only and removes link to parent
       this.grid.classed('drag-in-progress', true)
         .node().appendChild(node.node());
 
+<<<<<<< HEAD
 <<<<<<< HEAD
       // Because we need D3's this in onDrag function, and access to real this also.
       let that = this;
 =======
 >>>>>>> 4fea375... Add test for drag'n drop operations
+=======
+      this.grid.selectAll('path.link')
+        .filter(l => l.target.__id === d.__id).remove();
+
+>>>>>>> 4d47159... Implement and test node's result fetching
       // Highlight possible drop zone
       d3.selectAll('.node:not(.leaf):not(.dragged)')
         .classed('droppable', true)
@@ -499,7 +629,7 @@ export default class RequestTree {
     // Moves dragged element under mouse
     d.x += dy;
     d.y += dx;
-    this.dragged.node.attr('transform', `translate(${d.y},${d.x})`);
+    this.dragged.attr('transform', `translate(${d.y},${d.x})`);
   }
 
   /**
@@ -530,12 +660,16 @@ export default class RequestTree {
       .classed('droppable', false)
       .on('mouseover', null)
       .on('mouseout', null);
-    this.dragged.node.classed('dragged', false);
+    this.dragged.classed('dragged', false);
     this.grid.classed('drag-in-progress', false);
 
     if (!drop.empty()) {
       // If element was dropped on possible drop zone, add it to children
       drop.classed('selected', false);
+
+      // Removes sub tree from data
+      d.parent.children.splice(d.parent.children.indexOf(d), 1);
+
       let parent = drop.datum();
       if (!Array.isArray(parent.children)) {
         // Case of drop node is empty
@@ -543,9 +677,6 @@ export default class RequestTree {
       }
       parent.children.push(d);
       dispatchChange(this);
-    } else {
-      // Cancels drag by replacing element under its original parent
-      this.dragged.parent.children.splice(this.dragged.idx, 0, d);
     }
     this.dragged = null;
     this.update();

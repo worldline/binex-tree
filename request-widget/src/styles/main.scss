@@ -8,6 +8,9 @@
   > .decoration {
     fill: $color;
   }
+  > .value-decoration {
+    stroke: $color;
+  }
 }
 
 .tree {
@@ -42,11 +45,16 @@
     cursor: pointer;
     @include node-color($secondary-color);
 
-    > .text {
+    > .text, > .value {
       font-size: $label-size;
       font-family: $label-font;
       dominant-baseline: ideographic;
       text-anchor: start;
+    }
+
+    > .value {
+      dominant-baseline: hanging;
+      stroke: $tertiary-color;
     }
 
     > .content {
@@ -56,6 +64,10 @@
 
     > .decoration {
       width: 0.5em;
+    }
+
+    > .value-decoration {
+      stroke-width: 2px;
     }
   }
 

@@ -32,11 +32,15 @@ describe('getStyles', () => {
   });
 
   it('should return multiple styles directly set on a SVG node', () => {
+<<<<<<< HEAD
     let styles = getStyles(svg.select('rect'), 'fill', 'stroke');
 <<<<<<< HEAD
     expect(styles).to.have.property('fill').that.equals('rgb(255, 0, 0)');
     expect(styles).to.have.property('stroke').that.equals('rgb(0, 0, 255)');
 =======
+=======
+    let styles = getStyles(svg.select('rect'), {}, 'fill', 'stroke');
+>>>>>>> 4d47159... Implement and test node's result fetching
     expect(styles).to.have.property('fill');
     expect(['rgb(255, 0, 0)', 'red', '#ff0000', '#f00'].indexOf(styles.fill), 'fill is not red').not.to.equals(-1);
     expect(['rgb(0, 0, 255)', 'blue', '#0000ff', '#00f'].indexOf(styles.stroke), 'stroke is not blue').not.to.equals(-1);
@@ -44,25 +48,48 @@ describe('getStyles', () => {
   });
 
   it('should not return unkown style', () => {
-    let styles = getStyles(svg.select('rect'), 'unknown');
+    let styles = getStyles(svg.select('rect'), {}, 'unknown');
     expect(styles).to.exist.and.to.be.empty;
   });
 
   it('should return inherited style', () => {
-    let styles = getStyles(svg.select('rect'), 'font-family');
+    let styles = getStyles(svg.select('rect'), {}, 'font-family');
     expect(styles).to.have.property('font-family').that.equals('Arial');
   });
 
   it('should accept DOM node', () => {
-    let styles = getStyles(svg.select('rect').node(), 'fill');
+    let styles = getStyles(svg.select('rect').node(), {}, 'fill');
     expect(['rgb(255, 0, 0)', 'red', '#ff0000', '#f00'].indexOf(styles.fill), 'fill is not red').not.to.equals(-1);
   });
 
   it('should automatically parse pixel values', () => {
-    let styles = getStyles(svg.select('rect'), 'padding-top', 'padding-left', 'padding-bottom');
+    let styles = getStyles(svg.select('rect'), {}, 'padding-top', 'padding-left', 'padding-bottom');
     expect(styles).to.have.property('padding-top').that.equals(8);
     expect(styles).to.have.property('padding-left').that.equals(10);
     expect(styles).to.have.property('padding-bottom').that.equals('5%');
+  });
+
+  it('should take defaults value when provided', () => {
+    let styles = getStyles(svg.select('rect'), {
+      '.label': {
+        'margin-top': 3
+      }
+    }, 'margin-top', 'margin-bottom');
+    expect(styles).to.have.property('margin-top').that.equals(3);
+    expect(styles).not.to.have.property('margin-bottom');
+
+  });
+
+  it('should not fail on missing default value', () => {
+    let styles = getStyles(svg.select('rect'), {}, 'margin-bottom', 'padding-top');
+    expect(styles).to.have.property('padding-top').that.equals(8);
+    expect(styles).not.to.have.property('margin-bottom');
+  });
+
+  it('should not fail withou default values', () => {
+    let styles = getStyles(svg.select('rect'), null, 'margin-bottom', 'padding-top');
+    expect(styles).to.have.property('padding-top').that.equals(8);
+    expect(styles).not.to.have.property('margin-bottom');
   });
 
   after(() => {

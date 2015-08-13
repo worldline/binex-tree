@@ -9,14 +9,17 @@ import d3 from 'd3';
  * @param {String[]} styles - styles name you whish to consult
  * @return {Object} an object which properties are the retrieved styles
  */
-export function getStyles(node, ...styles) {
+export function getStyles(node, defaults, ...styles) {
   node = node instanceof d3.selection ? node.node() : node;
   let results = {};
   let values = window.getComputedStyle(node);
+  let selector = '.' + node.getAttribute('class').replace(/ /g, '.');
   styles.forEach(style => {
     let value = values[style];
-    if (value) {
+    if (value && value !== '0' && value !== '0px') {
       results[style] = /px$/.test(value) ? parseInt(value) : value;
+    } else if (defaults && defaults[selector] && defaults[selector][style]) {
+      results[style] = defaults[selector][style];
     }
   });
   return results;
