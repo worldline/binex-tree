@@ -7,116 +7,24 @@ export const plusSVG = '<svg width="1792" height="1792" viewBox="0 0 1792 1792" 
 export const pencilSVG = '<svg width="1792" height="1792" viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg"><path d="M491 1536l91-91-235-235-91 91v107h128v128h107zm523-928q0-22-22-22-10 0-17 7l-542 542q-7 7-7 17 0 22 22 22 10 0 17-7l542-542q7-7 7-17zm-54-192l416 416-832 832h-416v-416zm683 96q0 53-37 90l-166 166-416-416 166-165q36-38 90-38 53 0 91 38l235 234q37 39 37 91z"/></svg>';
 
 /**
- * Add a zoomable g layer inside the tree's svg node.
- * Store into tree's 'zoom' attribute the zoom behavior and into tree's 'grid' attribute the created node
- *
- * @param {RequestTree} tree - modified tree instance
- * @param {Number} tree.width - svg node width
- * @param {Number} tree.initialScale - initiale scale used for zooming (inside scaleExtent)
- * @param {[Number, Number]} tree.scaleExtent - minimum and maximal bound used for zoom.
- * @param {Behavior} tree.zoom - attribute used to store d3's zoom behavior
- * @return {SVGElement} g group created
+ * Each RequestTree instance is a D3 widget that displays and edit a request data structure.
+ * Represented data must have the following structure:
+
  */
-function makeZoomableGrid(tree) {
-  tree.zoom = d3.behavior.zoom()
-    .translate([tree.width * .25, 0])
-    .scale(tree.initialScale)
-    .scaleExtent(tree.scaleExtent)
-    .on('zoom', () => {
-      // Eventually, animate the move
-      tree.grid.transition().attr('transform', `translate(${d3.event.translate}) scale(${d3.event.scale})`);
-    });
-
-  tree.svg.on('click', tree.hideMenu.bind(tree));
-
-  tree.grid = tree.svg.call(tree.zoom)
-    .append('g')
-      .attr('transform', `translate(${tree.zoom.translate()}) scale(${tree.zoom.scale()})`);
-  return tree.grid;
-}
-
-/**
- * Get biggest node representation, and compute columns widths.
- *
- * @param {d3.selection} node - d3 nodes that will be analyzed
- * @param {Number} hSpacing - spacing factor (higher than 1) between two columns, where elbow will be located.
- * @return {Object} containing biggest node representation and columns width, with hSpacing factor
- * @return {Number} return.biggest.width - width of the biggest node
- * @return {Number} return.biggest.height - height of the biggest node
- * @return {Number[]} return.columns - array of column widths
- */
-function getDimensions(node, hSpacing) {
-  let biggest = {width: 0, height: 0};
-  let columns = [];
-
-  // Do not use fat arrow to have this aiming at current SVGElement
-  node.each(function(d) {
-    let {width, height} = this.getBBox();
-    let depth = d.depth;
-    width *= hSpacing;
-    if (biggest.width < width) {
-      biggest.width = width;
-    }
-    if (biggest.height < height) {
-      biggest.height = height;
-    }
-    if (!columns[depth]) {
-      columns[depth] = 0;
-    }
-    if (columns[depth] < width) {
-      columns[depth] = width;
-    }
-  });
-  return {biggest, columns};
-}
-
-/**
- * Asynchronously dispatch an event on a given tree instance
- *
- * @param {RequestTree} tree - concerned tree instance
- * @param {String} event - triggered event name
- * @param {Any[]} args - any argument passed to event.
- */
-function dispatch(tree, event, ...args) {
-  // Asynchronously dispatch change on data
-  setTimeout(() => {
-    tree[event](...args);
-  }, 0);
-}
-
-/**
- * Asynchronously dispatch a change event (with data as parameter) on a given tree instance
- *
- * @param {RequestTree} tree - concerned tree instance
- */
-function dispatchChange(tree) {
-  // TODO check effective change
-  dispatch(tree, 'change', utils.translateTreeToRequest(tree.data));
-}
-
-/**
- * Function factory that will return a SVGPath generator between two positions
- * Generated path are square links between the two node, where vertical elbow is located in the space
- * between two columns.
- *
- * @param {Number[]} columns - array containing columns width.
- * @param {Number} hSpacing - spacing factor (higher than 1) between two columns, where elbow will be located.
- * @return {Function} SVGPath generator, that takes an object with 'source' and 'target' points (x, y, width)
- * and that return a valid SVG path (usable for path 'd' attribute)
- */
-function makeElbow(columns, hSpacing) {
-  return ({source, target}) => {
-    let start = source.y + (source.width || 0);
-    // Elbow will takes place in horizontal spacing between levels
-    let space = columns[source.depth];
-    let corner = target.y - (space - space / hSpacing) / 2;
-    return `M${start},${source.x}H${corner}V${target.x}H${target.y}`;
-  };
-}
-
 export default class RequestTree {
 
-  constructor(anchor, request = null, options = {}) {
+  /**
+   * Builds a request tree widget and attachs it to DOM.
+   * All attributes are customizable through the option parameter, especially:
+   * - format: function used to get a textual representation of a given node
+   * - fetch: function used to get a numerical result for a given node
+   * - styles: object containing css selectors and rules to customize some rendering.
+   *
+   * @param {DOM|String} anchor - DOM node or CSS selector of node that will include the widget
+   * @param {Object = null} data - represented data, null to display an empty widget.
+   * @param {Object = {}} options - customized attribute for this instance
+   */
+  constructor(anchor, data = null, options = {}) {
 
     // Copy options, defaults, and override them with parameters.
     // Also makes the instance an event dispatcher.
@@ -198,7 +106,7 @@ export default class RequestTree {
     }
 
     // Creates a grid that will be pannable and zoomable
-    makeZoomableGrid(this);
+    utils.makeZoomableGrid(this);
 
     // Because we need D3's this in onDrag function, and access to real this also.
     let that = this;
@@ -211,25 +119,25 @@ export default class RequestTree {
       .on('drag', d => this.onDrag(d3.event, d))
       .on('dragend', d => this.onDrop(d3.event, d));
 
-    // Initialize request
+    // Initialize data
     this.data = {};
-    if (request) {
-      this.setRequest(request);
+    if (data) {
+      this.setData(data);
     }
   }
 
   /**
-   * Change the displayed request.
+   * Change the displayed data.
    * Calling this method will totally update the displayed content, removing previous display
    *
-   * @param {String} request - request to be displayed
-   * @throw {Error} if the new request is invalid
+   * @param {Object} data - data to be displayed
+   * @throw {Error} if the new data is invalid
    */
-  setRequest(request) {
+  setData(data) {
     // Parse displayed request. Will throw error if invalid
-    this.data = utils.translateRequestToTree(request);
+    this.data = utils.translateToTree(data);
     this.update();
-    dispatchChange(this);
+    this.dispatchChange();
   }
 
   /**
@@ -286,7 +194,7 @@ export default class RequestTree {
     let nodes = this.grid.selectAll('g.node');
 
     // Search for biggest node, and individual column width
-    let {biggest, columns} = getDimensions(nodes, this.hSpacing);
+    let {biggest, columns} = utils.getDimensions(nodes, this.hSpacing);
 
     // Then we layout again taking the node size into acocunt.
     let layout = d3.layout.tree().nodeSize([biggest.height * this.vSpacing, biggest.width]);
@@ -300,7 +208,7 @@ export default class RequestTree {
 
     // Creates link representation (remember, x is y and y is x)
     let links = layout.links(tree);
-    let elbow = makeElbow(columns, this.hSpacing);
+    let elbow = utils.makeElbow(columns, this.hSpacing);
 
     let link = this.grid.selectAll('path.link')
       .data(links, d => d.target.__id);
@@ -317,7 +225,7 @@ export default class RequestTree {
   }
 
   /**
-   * Method used to render a given request element
+   * Method used to render a given element
    * Draws the element text inside a rectangle
    *
    * @param {d3.selection} node - currently represented d3 selection
@@ -500,6 +408,28 @@ export default class RequestTree {
     });
   }
 
+
+  /**
+   * Asynchronously dispatch an event on a given tree instance
+   *
+   * @param {String} event - triggered event name
+   * @param {Any[]} args - any argument passed to event.
+   */
+  dispatch(event, ...args) {
+    // Asynchronously dispatch change on data
+    setTimeout(() => {
+      this[event](...args);
+    }, 0);
+  }
+
+  /**
+   * Asynchronously dispatch a change event (with data as parameter) on a given tree instance
+   */
+  dispatchChange() {
+    // TODO check effective change
+    this.dispatch('change', utils.translateFromTree(this.data));
+  }
+
   /**
    * Hide the current menu. Does nothing if no menu is displayed
    */
@@ -525,7 +455,7 @@ export default class RequestTree {
     // Compute needed menu items
     let items = [{
       kind: 'edit',
-      handler: () => dispatch(this, 'editNode', d)
+      handler: () => this.dispatch('editNode', d)
     }];
     if (d !== this.data) {
       // Root element cannot be removed
@@ -537,7 +467,7 @@ export default class RequestTree {
           }
           d.parent.children.splice(d.parent.children.indexOf(d), 1);
           this.update();
-          dispatchChange(this);
+          this.dispatchChange();
         }
       });
     }
@@ -545,7 +475,7 @@ export default class RequestTree {
       // Only non-leave can have more children
       items.unshift({
         kind: 'add',
-        handler: () => dispatch(this, 'addToNode', d)
+        handler: () => this.dispatch('addToNode', d)
       });
     }
 
@@ -676,7 +606,7 @@ export default class RequestTree {
         parent.children = [];
       }
       parent.children.push(d);
-      dispatchChange(this);
+      this.dispatchChange();
     }
     this.dragged = null;
     this.update();

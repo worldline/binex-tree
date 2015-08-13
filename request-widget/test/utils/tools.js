@@ -1,5 +1,5 @@
 import d3 from 'd3';
-import {translateRequestToTree, assign, translateTreeToRequest, formatNumber} from '../../src/utils/tools';
+import {translateToTree, assign, translateFromTree, formatNumber} from '../../src/utils/tools';
 import {parse} from 'targeting-engine-common';
 const expect = chai.expect;
 chai.config.truncateThreshold = 0;
@@ -40,10 +40,10 @@ describe('formatNumber', () => {
   });
 });
 
-describe('translateRequestToTree', () => {
+describe('translateToTree', () => {
 
   it('should not modifiy a single node request', () => {
-    expect(translateRequestToTree(parse('f1[value > "gold" time = 10]'))).to.deep.equals({
+    expect(translateToTree(parse('f1[value > "gold" time = 10]'))).to.deep.equals({
       name: 'f1',
       value: {
         operator: '>',
@@ -57,7 +57,7 @@ describe('translateRequestToTree', () => {
   });
 
   it('should handle logical or', () => {
-    expect(translateRequestToTree(parse('f1[value < 10] || f2[value > 20]'))).to.deep.equals({
+    expect(translateToTree(parse('f1[value < 10] || f2[value > 20]'))).to.deep.equals({
       name: '$or',
       children: [{
         name: 'f1',
@@ -76,7 +76,7 @@ describe('translateRequestToTree', () => {
   });
 
   it('should handle logical and', () => {
-    expect(translateRequestToTree(parse('f1[value < 10] || f2[loc > 20,10,4] && f3[time = 10]'))).to.deep.equals({
+    expect(translateToTree(parse('f1[value < 10] || f2[loc > 20,10,4] && f3[time = 10]'))).to.deep.equals({
       name: '$or',
       children: [{
         name: 'f1',
@@ -104,7 +104,7 @@ describe('translateRequestToTree', () => {
   });
 });
 
-describe('translateTreeToRequest', () => {
+describe('translateFromTree', () => {
 
   it('should purge all d3 layout additionnal properties', () => {
     let data = {
@@ -134,7 +134,7 @@ describe('translateTreeToRequest', () => {
     };
     d3.layout.tree().nodes(data);
     expect(data).to.include.keys(['depth', 'x', 'y', 'children']);
-    expect(translateTreeToRequest(data)).to.deep.equals({
+    expect(translateFromTree(data)).to.deep.equals({
       $or: [{
         name: 'f1',
         value: {
@@ -174,7 +174,7 @@ describe('translateTreeToRequest', () => {
       }]
     };
     d3.layout.tree().nodes(data);
-    expect(translateTreeToRequest(data)).to.deep.equals({
+    expect(translateFromTree(data)).to.deep.equals({
       $or: [{
         name: 'f1',
         value: {
@@ -193,8 +193,8 @@ describe('assign', () => {
     let o2 = {k4: [1, 2], k5: 'ko'};
     let result = assign(o1, o2);
     expect(result).to.equal(o1);
-    expect(o2).to.have.keys(['k4', 'k5']);
-    expect(o1).to.deep.keys({k1: true, k2: 2, k3: 'ok', k4: [1, 2], k5: 'ko'});
+    expect(o2).to.have.all.keys(['k4', 'k5']);
+    expect(o1).to.deep.equals({k1: true, k2: 2, k3: 'ok', k4: [1, 2], k5: 'ko'});
   });
 
   it('should copy attributes from multiple objects into another', () => {
@@ -204,10 +204,10 @@ describe('assign', () => {
     let o4 = {k7: -5};
     let result = assign(o1, o2, o3, o3, o4);
     expect(result).to.equal(o1);
-    expect(o2).to.have.keys(['k4', 'k5']);
-    expect(o3).to.have.keys(['k6']);
-    expect(o4).to.have.keys(['k7']);
-    expect(o1).to.deep.keys({k1: true, k2: 2, k3: 'ok', k4: [1, 2], k5: 'ko', k6: {status: 'ok'}, k7: -5});
+    expect(o2).to.have.all.keys(['k4', 'k5']);
+    expect(o3).to.have.all.keys('k6');
+    expect(o4).to.have.all.keys('k7');
+    expect(o1).to.deep.equals({k1: true, k2: 2, k3: 'ok', k4: [1, 2], k5: 'ko', k6: {status: 'ok'}, k7: -5});
   });
 
   it('should attributes in rightmost objects takes precedence over left-most objects', () => {
@@ -216,11 +216,11 @@ describe('assign', () => {
     let o3 = {k2: -5, k3: '-'};
     let o4 = {k3: 'ko'};
     let result = assign(o1, o2, o3, o4);
-    expect(result).to.equal(o1);
-    expect(o2).to.deep.equal({k1: true, k2: 10, k3: 'ok'});
-    expect(o3).to.deep.equal({k2: -5, k3: '-'});
-    expect(o4).to.deep.equal({k3: 'ko'});
-    expect(o1).to.deep.keys({k1: true, k2: -5, k3: 'ko'});
+    expect(result).to.equals(o1);
+    expect(o2).to.deep.equals({k1: true, k2: 10, k3: 'ok'});
+    expect(o3).to.deep.equals({k2: -5, k3: '-'});
+    expect(o4).to.deep.equals({k3: 'ko'});
+    expect(o1).to.deep.equals({k1: true, k2: -5, k3: 'ko'});
   });
 
   it('should not enumerable properties not be copied', () => {
@@ -234,5 +234,57 @@ describe('assign', () => {
     expect(result).to.equal(o1);
     expect(o2.k2).to.equal(10);
     expect(o1).to.deep.keys({k1: true});
+  });
+
+  it('should deep attributes be copied', () => {
+    let o1 = {deep: {status: 'ok'}};
+    let o2 = {deep: {finished: true}};
+    let o3 = {other: 10};
+    let result = assign(o1, o2, o3);
+    expect(result).to.equals(o1);
+    expect(o2).to.deep.equals({deep: {finished: true}});
+    expect(o3).to.deep.equals({other: 10});
+    expect(o1).to.deep.equals({
+      deep: {
+        status: 'ok',
+        finished: true
+      },
+      other: 10
+    });
+  });
+
+  it('should create deep attributes', () => {
+    let o1 = {something: 'coucou'};
+    let o2 = {deep: {finished: true}};
+    let o3 = {other: 10};
+    let result = assign(o1, o2, o3);
+    expect(result).to.equals(o1);
+    expect(o2).to.deep.equals({deep: {finished: true}});
+    expect(o3).to.deep.equals({other: 10});
+    expect(o1).to.deep.equals({
+      something: 'coucou',
+      deep: {
+        finished: true
+      },
+      other: 10
+    });
+  });
+
+  it('should deep attributes in rightmost objects takes precedence over left-most objects', () => {
+    let o1 = {something: 'coucou'};
+    let o2 = {deep: {one: 1, finished: true}};
+    let o3 = {deep: {two: 2, finished: false}};
+    let result = assign(o1, o2, o3);
+    expect(result).to.equals(o1);
+    expect(o2).to.deep.equals({deep: {one: 1, finished: true}});
+    expect(o3).to.deep.equals({deep: {two: 2, finished: false}});
+    expect(o1).to.deep.equals({
+      something: 'coucou',
+      deep: {
+        one: 1,
+        two: 2,
+        finished: false
+      }
+    });
   });
 });

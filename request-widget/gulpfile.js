@@ -114,18 +114,32 @@ var bundler = webpack(_.assign({}, {
   plugins: [new (require('webpack/lib/optimize/UglifyJsPlugin'))()]
 }*/));
 
+function reportWebpackErrors (stats) {
+  stats = stats.toJson({
+    cached: false,
+  });
+  stats.errors.forEach(function (err) {
+    log(colors.red('error:') + err.substring(0, err.indexOf('  at ')));
+  });
+  return stats;
+}
+
 function bundle(watch) {
   return function(done) {
     if (watch) {
       bundler.watch({}, function (err, stats) {
-        stats = stats.toJson({
-          cached: false,
-        }).modules.forEach(function (module) {
+        reportWebpackErrors(stats).modules.forEach(function (module) {
           log(module.name + colors.cyan(' rebuilt'));
         });
       });
     } else {
-      bundler.run(done);
+      bundler.run(function(err, stats) {
+        stats = reportWebpackErrors(stats);
+        if(stats.errors.length > 0) {
+          return done(new gutil.PluginError('bundle', 'errors found'));
+        }
+        done(err);
+      });
     }
   };
 }
@@ -166,6 +180,7 @@ gulp.task('default', ['build'], function() {
   bundle(true)();
   gulp.src('.')
     .pipe(webserver({
+      port: 8001,
       livereload: {
         enable: true,
         filter: function(fileName) {
@@ -174,5 +189,6 @@ gulp.task('default', ['build'], function() {
         }
       }
     }));
+  gulp.watch(paths.sources, ['lint']);
   gulp.watch(paths.styles, ['styles']);
 });
