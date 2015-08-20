@@ -1,0 +1,8 @@
+**/node_modules
+**/build
+**/coverage
+**/test_report.xml
+**/npm-debug.log
+/.project
+.settings
+targeting-engine-loader/*target*.csv
