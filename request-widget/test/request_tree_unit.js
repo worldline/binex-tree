@@ -6,48 +6,7 @@ import {parse} from 'targeting-engine-common';
 const expect = chai.expect;
 chai.config.truncateThreshold = 0;
 
-<<<<<<< HEAD
-describe('Request Tree unit tests', () => {
-
-  /**
-   * Used to get all nodes in a tree at a given depth
-   *
-   * @param {Object} node - node processed (must contains depth, and may contains children attribute)
-   * @param {Number} depth - expected depth
-   * @return {Object[]} node of the given depth
-   */
-  function extractNodes(node, depth) {
-    let selected = node.depth === depth ? [node] : [];
-    if (node.children) {
-      node.children.forEach(c => {
-        selected = selected.concat(extractNodes(c, depth));
-      });
-    }
-    return selected;
-  }
-
-  /**
-   * Enrich incoming node with an id.
-   * If node is a feature, use the feature name, otherwise, use generated id
-   * Logical alternatives are recursively enriched.
-   *
-   * @param {Object} data - enriched data structure
-   * @param {Number = 1} nextId - next id used for non-feature nodes.
-   * @return {Object} modified data
-   */
-  function addIds(data, nextId = 1) {
-    let id = data.name ? data.name : `${nextId++}`;
-    data.id = id;
-    if (data.$and) {
-      data.$and.forEach(d => addIds(d, nextId));
-    } else if (data.$or) {
-      data.$or.forEach(d => addIds(d, nextId));
-    }
-    return data;
-  }
-=======
 describe('Request Tree', () => {
->>>>>>> 4fea375... Add test for drag'n drop operations
 
   /**
    * Function to be called inside an Array.reduce to get hightest number
@@ -175,7 +134,6 @@ describe('Request Tree', () => {
     expect(column3[0].y).to.closeTo(column2[0].y + largestColum2 * 1.4, 1);
   });
 
-<<<<<<< HEAD
   it('should menu not include removal for root', () => {
     /* eslint no-new: 0 */
     new RequestTree('#main', addIds(parse('f1 [value = "something long"]')));
@@ -234,7 +192,8 @@ describe('Request Tree', () => {
     expect(d3.select('.menu').empty(), 'no menu found').to.be.false;
     tree.svg.node().dispatchEvent(new MouseEvent('click'));
     expect(d3.select('.menu').empty(), 'menu still visible').to.be.true;
-=======
+  });
+
   it('should customize text formating', () => {
     let tree = new RequestTree('#main', addIds(parse('f1 [value = "something long"] && age [value < 7]')), {
       format: (d) => `prefix_${d.name}`
@@ -298,6 +257,5 @@ describe('Request Tree', () => {
     node = tree.svg.select('[data-id="f1"] > .value');
     expect(node.empty(), 'f1 value not found').to.be.false;
     expect(node.text()).to.equal(formatNumber(values.f1, ','));
->>>>>>> 4d47159... Implement and test node's result fetching
   });
 });

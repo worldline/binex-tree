@@ -36,7 +36,6 @@ export default class RequestTree {
       hSpacing: 1.4,
       vSpacing: 1.2,
       animDuration: 1000,
-<<<<<<< HEAD
       dragSensibility: 200,
       dragged: null,
       thousandSeparator: ',',
@@ -78,10 +77,6 @@ export default class RequestTree {
         }
       }
     }, d3.dispatch('change', 'editNode', 'addToNode'), options);
-=======
-      dragged: null
-    }, d3.dispatch('change'), options);
->>>>>>> 4fea375... Add test for drag'n drop operations
 
     this.fetching = 0;
 
@@ -167,17 +162,8 @@ export default class RequestTree {
       .attr('class', 'node');
 
     // For new and existing nodes, update rendering.
-<<<<<<< HEAD
-    nodes.call(this.renderNode)
-<<<<<<< HEAD
-      .attr('data-id', d => d.id)
-=======
-      .attr('data-id', d => d.__id)
->>>>>>> 4fea375... Add test for drag'n drop operations
-=======
     nodes.call(this.renderNode.bind(this))
       .attr('data-id', d => d.id || d.__id)
->>>>>>> 4d47159... Implement and test node's result fetching
       .classed('leaf', ({name}) => name !== '$and' && name !== '$or');
 
     // Remove unecessary nodes
@@ -342,10 +328,6 @@ export default class RequestTree {
       .attr('class', 'background')
       // Do not use fat arrow to have this aiming at current SVGElement
       .each(function(d, i) {
-<<<<<<< HEAD
-        // Get background dimensions
-        let {width, height, 'margin-right': margin} = utils.getStyles(this, 'width', 'height', 'margin-right');
-=======
         // Get background dimensions. Unfortunately browser do not have the same behaviour regarding width/height
         let {width, height, 'margin-right': margin} = getStyles(this, this.styles, 'width', 'height', 'margin-right');
         // If dimensions can't be inferred from CSS, use the classical bounding box
@@ -354,7 +336,6 @@ export default class RequestTree {
           width = box.width;
           height = box.height;
         }
->>>>>>> 4d47159... Implement and test node's result fetching
         let text = d3.select(this.parentNode).select('.text');
         let testStyle = getStyles(text.node(), this.styles, 'padding-top', 'padding-right', 'padding-bottom', 'padding-left');
 
@@ -516,17 +497,9 @@ export default class RequestTree {
       this.grid.classed('drag-in-progress', true)
         .node().appendChild(node.node());
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-      // Because we need D3's this in onDrag function, and access to real this also.
-      let that = this;
-=======
->>>>>>> 4fea375... Add test for drag'n drop operations
-=======
       this.grid.selectAll('path.link')
         .filter(l => l.target.__id === d.__id).remove();
 
->>>>>>> 4d47159... Implement and test node's result fetching
       // Highlight possible drop zone
       d3.selectAll('.node:not(.leaf):not(.dragged)')
         .classed('droppable', true)
@@ -536,11 +509,7 @@ export default class RequestTree {
         .on('mouseout', () => {
           this.svg.selectAll('.selected').classed('selected', false);
         });
-<<<<<<< HEAD
     }, this.dragSensibility);
-=======
-    }, 150);
->>>>>>> 4fea375... Add test for drag'n drop operations
     // Temporary disable whole tree zoom behaviour
     evt.sourceEvent.stopPropagation();
   }
@@ -563,13 +532,8 @@ export default class RequestTree {
   }
 
   /**
-<<<<<<< HEAD
-   * Invoked when a dragged node is dropped.
-   * If drop over an acceptable drop zone (`this.dragged.drop`), move the subtree.
-=======
    * Invoke when a dragged node is dropped.
    * If drop over an acceptable drop zone (a droppable node with selected class), move the subtree.
->>>>>>> 4fea375... Add test for drag'n drop operations
    * Otherwise, reverd dragged subtree to its original location (`this.dragged.parent`).
    * Update rendering to reflect results
    *

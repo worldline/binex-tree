@@ -7,17 +7,12 @@ chai.config.truncateThreshold = 0;
 
 describe('Request Tree drag\'n drop', function () {
   this.timeout(5000);
-<<<<<<< HEAD
-  let animDuration = 100;
-=======
-
   // Default values for widget construction
   let animDuration = 10;
   let options = {
     animDuration,
     fetch: (d, done) => done(null, 0)
   };
->>>>>>> 4d47159... Implement and test node's result fetching
 
   beforeEach(() => {
     d3.select('#main').html('');

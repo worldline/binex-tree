@@ -32,19 +32,10 @@ describe('getStyles', () => {
   });
 
   it('should return multiple styles directly set on a SVG node', () => {
-<<<<<<< HEAD
-    let styles = getStyles(svg.select('rect'), 'fill', 'stroke');
-<<<<<<< HEAD
-    expect(styles).to.have.property('fill').that.equals('rgb(255, 0, 0)');
-    expect(styles).to.have.property('stroke').that.equals('rgb(0, 0, 255)');
-=======
-=======
     let styles = getStyles(svg.select('rect'), {}, 'fill', 'stroke');
->>>>>>> 4d47159... Implement and test node's result fetching
     expect(styles).to.have.property('fill');
     expect(['rgb(255, 0, 0)', 'red', '#ff0000', '#f00'].indexOf(styles.fill), 'fill is not red').not.to.equals(-1);
     expect(['rgb(0, 0, 255)', 'blue', '#0000ff', '#00f'].indexOf(styles.stroke), 'stroke is not blue').not.to.equals(-1);
->>>>>>> 4fea375... Add test for drag'n drop operations
   });
 
   it('should not return unkown style', () => {

@@ -1,11 +1,5 @@
 import d3 from 'd3';
-<<<<<<< HEAD
-import RequestTree from './request_tree';
-import {parse} from '../../common/src/grammar_parser';
-import {generate} from '../../common/src/grammar_generator';
-=======
 import TargetingEngineTree from './targeting-engine/tree';
->>>>>>> f7b2f99... Working implementation of node result fetch on targeting-engine API
 
 //let request = '(mkt_sgm[value = "gold + long"] && mkt_sgm[value = "gold"] && mkt_sgm[value = "gold"] && mkt_sgm[value = "gold"] && mkt_sgm[value = "gold"] && mkt_sgm[value = "gold"] && mkt_sgm[value = "gold"] && (bought_solar[value = false] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"] || gender[value = "male"]))  || (bought_solar[value = false] && gender[value = "male"])';
 let request = 'sgm_esso [value >= 125] || sgm_kaufhof [value >= 15] && sgm_obi [value >= 10]';
