@@ -18,6 +18,26 @@ export function extractNodes (node, depth = -1) {
 }
 
 /**
+ * Enrich incoming node with an id.
+ * If node is a feature, use the feature name, otherwise, use generated id
+ * Logical alternatives are recursively enriched.
+ *
+ * @param {Object} data - enriched data structure
+ * @param {Number = 1} nextId - next id used for non-feature nodes.
+ * @return {Object} modified data
+ */
+export function addIds(data, nextId = 1) {
+  let id = data.name ? data.name : `${nextId++}`;
+  data.id = id;
+  if (data.$and) {
+    data.$and.forEach(d => addIds(d, nextId));
+  } else if (data.$or) {
+    data.$or.forEach(d => addIds(d, nextId));
+  }
+  return data;
+}
+
+/**
  * Programmatically triggers an event on a given node.
  * @param {Object|} node - data represented by the dragged node (selection is done from __id property)
  */

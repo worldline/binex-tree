@@ -1,6 +1,5 @@
 import d3 from 'd3';
 import TargetingEngineTree from '../../src/targeting-engine/tree';
-import {extractNodes, addIds} from '../utils/test_utilities';
 const expect = chai.expect;
 chai.config.truncateThreshold = 0;
 
@@ -37,7 +36,7 @@ describe('Targeting engine Tree', () => {
   });
 
   it('should build tree from a string request', () => {
-    let tree = new TargetingEngineTree('#main', 'f1[value=1]')
+    let tree = new TargetingEngineTree('#main', 'f1[value=1]');
     expect(tree).to.have.property('data');
     expect(tree.data).to.have.property('name').that.equals('f1');
     expect(tree.data).to.have.property('value').that.deep.equals({
@@ -52,7 +51,7 @@ describe('Targeting engine Tree', () => {
   it('should asynchronously issue change event with string request', done => {
     let request = 'mkt_sgm [value = "gold"]';
     let sync = true;
-    let tree = new TargetingEngineTree('#main', JSON.parse(JSON.stringify(request))).on('change', data => {
+    new TargetingEngineTree('#main', JSON.parse(JSON.stringify(request))).on('change', data => {
       expect(sync, 'change event was triggered synchronously !').to.be.false;
       expect(data).to.deep.equals(request);
       done();

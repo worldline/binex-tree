@@ -7,6 +7,7 @@ chai.config.truncateThreshold = 0;
 
 describe('Request Tree drag\'n drop', function () {
   this.timeout(5000);
+
   // Default values for widget construction
   let animDuration = 10;
   let options = {

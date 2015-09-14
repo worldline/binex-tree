@@ -80,7 +80,6 @@ var conf = {
     'karma-chrome-launcher',
     'karma-firefox-launcher',
     'karma-mocha',
-    'karma-phantomjs-launcher',
     'karma-sourcemap-loader',
     'karma-webpack',
     require('./test/html-prepend')

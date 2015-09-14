@@ -134,66 +134,6 @@ describe('Request Tree', () => {
     expect(column3[0].y).to.closeTo(column2[0].y + largestColum2 * 1.4, 1);
   });
 
-  it('should menu not include removal for root', () => {
-    /* eslint no-new: 0 */
-    new RequestTree('#main', addIds(parse('f1 [value = "something long"]')));
-
-    d3.select('.node[data-id="f1"]').node().dispatchEvent(new MouseEvent('click'));
-    let menu = d3.select('.menu');
-    expect(menu.empty(), 'no menu found').to.be.false;
-    expect(menu.selectAll('.action').size()).to.equals(1);
-    expect(menu.select('.edit').empty(), 'no edit action found').to.be.false;
-    expect(menu.select('.remove').empty(), 'remove action found').to.be.true;
-  });
-
-  it('should menu not include removal on logical operator root', () => {
-    /* eslint no-new: 0 */
-    new RequestTree('#main', addIds(parse('f1[value=1] || f2[value=2]')));
-
-    d3.select('.node[data-id="1"]').node().dispatchEvent(new MouseEvent('click'));
-    let menu = d3.select('.menu');
-    expect(menu.empty(), 'no menu found').to.be.false;
-    expect(menu.selectAll('.action').size()).to.equals(2);
-    expect(menu.select('.edit').empty(), 'no edit action found').to.be.false;
-    expect(menu.select('.add').empty(), 'no add action found').to.be.false;
-    expect(menu.select('.remove').empty(), 'remove action found').to.be.true;
-  });
-
-  it('should menu not include addition on leaves', () => {
-    /* eslint no-new: 0 */
-    new RequestTree('#main', addIds(parse('f1[value=1] || f2[value=2]')));
-
-    d3.select('.node[data-id="f1"]').node().dispatchEvent(new MouseEvent('click'));
-    let menu = d3.select('.menu');
-    expect(menu.empty(), 'no menu found').to.be.false;
-    expect(menu.selectAll('.action').size()).to.equals(2);
-    expect(menu.select('.edit').empty(), 'no edit action found').to.be.false;
-    expect(menu.select('.add').empty(), 'add action found').to.be.true;
-    expect(menu.select('.remove').empty(), 'no remove action found').to.be.false;
-  });
-
-  it('should menu include all actions on non-root nodes', () => {
-    /* eslint no-new: 0 */
-    new RequestTree('#main', addIds(parse('f1[value=1] || f2[value=2] && f3[value=3]')));
-
-    d3.select('.node[data-id="2"]').node().dispatchEvent(new MouseEvent('click'));
-    let menu = d3.select('.menu');
-    expect(menu.empty(), 'no menu found').to.be.false;
-    expect(menu.selectAll('.action').size()).to.equals(3);
-    expect(menu.select('.edit').empty(), 'no edit action found').to.be.false;
-    expect(menu.select('.add').empty(), 'no add action found').to.be.false;
-    expect(menu.select('.remove').empty(), 'no remove action found').to.be.false;
-  });
-
-  it('should menu be cleared when clicking elsewhere', () => {
-    let tree = new RequestTree('#main', addIds(parse('f1[value=1]')));
-
-    d3.select('.node[data-id="f1"]').node().dispatchEvent(new MouseEvent('click'));
-    expect(d3.select('.menu').empty(), 'no menu found').to.be.false;
-    tree.svg.node().dispatchEvent(new MouseEvent('click'));
-    expect(d3.select('.menu').empty(), 'menu still visible').to.be.true;
-  });
-
   it('should customize text formating', () => {
     let tree = new RequestTree('#main', addIds(parse('f1 [value = "something long"] && age [value < 7]')), {
       format: (d) => `prefix_${d.name}`
