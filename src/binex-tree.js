@@ -1,3 +1,4 @@
+require('./styles/main.scss');
 import d3 from 'd3';
 import * as utils from './utils/tools';
 import {getStyles} from './utils/svg';
@@ -7,11 +8,11 @@ export const plusSVG = '<svg width="1792" height="1792" viewBox="0 0 1792 1792" 
 export const pencilSVG = '<svg width="1792" height="1792" viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg"><path d="M491 1536l91-91-235-235-91 91v107h128v128h107zm523-928q0-22-22-22-10 0-17 7l-542 542q-7 7-7 17 0 22 22 22 10 0 17-7l542-542q7-7 7-17zm-54-192l416 416-832 832h-416v-416zm683 96q0 53-37 90l-166 166-416-416 166-165q36-38 90-38 53 0 91 38l235 234q37 39 37 91z"/></svg>';
 
 /**
- * Each RequestTree instance is a D3 widget that displays and edit a request data structure.
+ * Each BinexTree instance is a D3 widget that displays and edit a request data structure.
  * Represented data must have the following structure:
-
+ * TODO
  */
-export default class RequestTree {
+export default class BinexTree {
 
   /**
    * Builds a request tree widget and attachs it to DOM.

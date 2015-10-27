@@ -1,25 +1,55 @@
 {
-  "name": "targeting-engine",
+  "name": "binex-tree",
   "version": "0.1.0",
-  "description": "Business Center BI & Big Data's targeting engine",
+  "description": "A pure D3 tree to edit and display binary expression as a tree.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/worldline/binex-tree.git"
+  },
+  "author": {
+    "name": "Worldline"
+  },
+  "contributors": [
+    {
+      "name": "Damien SIMONIN FEUGAS",
+      "email": "damien.feugas@gmail.com"
+    }
+  ],
+  "dependencies": {
+    "d3": "3.5.6"
+  },
   "devDependencies": {
-    "babel-core": "5.4.7",
-    "babel-eslint": "3.1.9",
-    "chai": "2.3.0",
-    "gulp": "3.8.11",
-    "gulp-babel": "5.1.0",
-    "gulp-eslint": "0.12.0",
-    "gulp-if": "^1.2.5",
-    "gulp-insert": "0.4.0",
-    "gulp-istanbul": "0.9.0",
-    "gulp-mocha": "2.1.0",
-    "gulp-sourcemaps": "1.5.2",
-    "gulp-util": "3.0.4",
-    "isparta": "3.0.3",
-    "istanbul": "0.3.14",
-    "lodash": "^3.10.0",
-    "mocha": "2.2.5",
-    "rimraf": "2.3.4",
-    "source-map-support": "0.3.0"
+    "babel-loader": "5.3.2",
+    "css-loader": "0.21.0",
+    "eslint": "1.7.3",
+    "extract-text-webpack-plugin": "0.8.2",
+    "gulp": "3.9.0",
+    "gulp-eslint": "1.0.0",
+    "gulp-sass": "2.0.4",
+    "gulp-util": "3.0.7",
+    "gulp-webserver": "0.9.1",
+    "isparta-instrumenter-loader": "0.2.1",
+    "karma": "0.13.14",
+    "karma-chai": "0.1.0",
+    "karma-chrome-launcher": "0.2.1",
+    "karma-coverage": "0.5.3",
+    "karma-firefox-launcher": "0.1.6",
+    "karma-mocha": "0.2.0",
+    "karma-sourcemap-loader": "0.3.6",
+    "karma-webpack": "1.7.0",
+    "lodash": "3.10.1",
+    "node-libs-browser": "0.5.3",
+    "node-sass": "3.4.1",
+    "rimraf": "2.4.3",
+    "sass-loader": "3.1.1",
+    "style-loader": "0.13.0",
+    "webpack": "1.12.2"
+  },
+  "scripts": {
+    "lint": "gulp lint",
+    "dist": "gulp dist",
+    "start": "gulp",
+    "test": "gulp test-watch"
   }
 }

@@ -5,4 +5,5 @@
 **/npm-debug.log
 /.project
 .settings
+.vscode
 targeting-engine-loader/*target*.csv

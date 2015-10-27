@@ -1,8 +1,7 @@
 import d3 from 'd3';
-import RequestTree from '../src/request_tree';
-import {extractNodes, addIds} from './utils/test_utilities';
+import BinexTree from '../src/binex-tree';
+import {extractNodes, addIds, parse} from './utils/test-utilities';
 import {formatNumber} from '../src/utils/tools';
-import {parse} from 'targeting-engine-common';
 const expect = chai.expect;
 chai.config.truncateThreshold = 0;
 
@@ -20,11 +19,11 @@ describe('Request Tree', () => {
 
   it('should not build without anchor', () => {
     /* eslint no-new: 0 */
-    expect(() => new RequestTree()).to.throw('no node found for');
+    expect(() => new BinexTree()).to.throw('no node found for');
   });
 
   it('should build empty tree', () => {
-    let tree = new RequestTree('#main');
+    let tree = new BinexTree('#main');
     expect(tree).to.have.property('data').that.is.empty;
     expect(tree).to.have.property('svg').that.exists;
   });
@@ -32,7 +31,7 @@ describe('Request Tree', () => {
   it('should build tree from a given request', (done) => {
     let request = parse('mkt_sgm [value = "gold"]');
     let sync = true;
-    let tree = new RequestTree('#main', JSON.parse(JSON.stringify(request))).on('change', data => {
+    let tree = new BinexTree('#main', JSON.parse(JSON.stringify(request))).on('change', data => {
       expect(sync, 'change event was triggered synchronously !').to.be.false;
       expect(data).to.deep.equals(request);
       done();
@@ -50,7 +49,7 @@ describe('Request Tree', () => {
   });
 
   it('should customize default options in constructor', () => {
-    let tree = new RequestTree('#main', {$and: []}, {initialScale: 1, vSpacing: 1.5, other: 'unknown'});
+    let tree = new BinexTree('#main', {$and: []}, {initialScale: 1, vSpacing: 1.5, other: 'unknown'});
     expect(tree).to.have.property('initialScale').that.equals(1);
     expect(tree).to.have.property('vSpacing').that.equals(1.5);
     expect(tree).to.have.property('other').that.equals('unknown');
@@ -62,7 +61,7 @@ describe('Request Tree', () => {
   });
 
   it('should represent multiple hierarchichal levels', () => {
-    let tree = new RequestTree('#main', parse('gender [value = "male"] && (age [value < 7] || age [value > 77])'));
+    let tree = new BinexTree('#main', parse('gender [value = "male"] && (age [value < 7] || age [value > 77])'));
     expect(tree).to.have.property('data');
 
     // root is logical and
@@ -97,7 +96,7 @@ describe('Request Tree', () => {
   });
 
   it('should use largest node inside a column', () => {
-    let tree = new RequestTree('#main', parse('f1 [value = "something long"] && (age [value < 7] || age [value > 77])'));
+    let tree = new BinexTree('#main', parse('f1 [value = "something long"] && (age [value < 7] || age [value > 77])'));
     expect(tree).to.have.property('data');
     let column2 = extractNodes(tree.data, 1);
 
@@ -117,7 +116,7 @@ describe('Request Tree', () => {
   });
 
   it('should collapse column to fit largest node', () => {
-    let tree = new RequestTree('#main', parse('f1 [value = "something long"] && (age [value < 7] || age [value > 77])'));
+    let tree = new BinexTree('#main', parse('f1 [value = "something long"] && (age [value < 7] || age [value > 77])'));
     expect(tree).to.have.property('data');
 
     let column1 = extractNodes(tree.data, 0);
@@ -135,7 +134,7 @@ describe('Request Tree', () => {
   });
 
   it('should customize text formating', () => {
-    let tree = new RequestTree('#main', addIds(parse('f1 [value = "something long"] && age [value < 7]')), {
+    let tree = new BinexTree('#main', addIds(parse('f1 [value = "something long"] && age [value < 7]')), {
       format: (d) => `prefix_${d.name}`
     });
     let node = tree.svg.select('[data-id="f1"] > .text');
@@ -154,7 +153,7 @@ describe('Request Tree', () => {
       '1': 1200
     };
     let thousandSeparator = '.';
-    let tree = new RequestTree('#main', addIds(parse('f1 [value = "something long"] && age [value < 7]')), {
+    let tree = new BinexTree('#main', addIds(parse('f1 [value = "something long"] && age [value < 7]')), {
       fetch: (d, done) => done(null, values[d.id]),
       thousandSeparator
     });
@@ -177,7 +176,7 @@ describe('Request Tree', () => {
       f1: 1000,
       age: 500
     };
-    let tree = new RequestTree('#main', addIds(parse('f1 [value = "something long"] && age [value < 7]')), {
+    let tree = new BinexTree('#main', addIds(parse('f1 [value = "something long"] && age [value < 7]')), {
       fetch: (d, done) => {
         if (values[d.id]) {
           return done(null, values[d.name]);

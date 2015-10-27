@@ -1,7 +1,6 @@
 import d3 from 'd3';
-import RequestTree from '../src/request_tree';
-import {extractNodes, dragNode} from './utils/test_utilities';
-import {parse} from 'targeting-engine-common';
+import BinexTree from '../src/binex-tree';
+import {extractNodes, dragNode, parse} from './utils/test-utilities';
 const expect = chai.expect;
 chai.config.truncateThreshold = 0;
 
@@ -20,7 +19,7 @@ describe('Request Tree drag\'n drop', function () {
   });
 
   it('should revert aborted drag', done => {
-    let tree = new RequestTree('#main', parse('f1 [value = "something long"] && (age [value < 7] || age [value > 77])'), options);
+    let tree = new BinexTree('#main', parse('f1 [value = "something long"] && (age [value < 7] || age [value > 77])'), options);
     let changeTriggered = false;
     expect(tree).to.have.property('data');
 
@@ -45,7 +44,7 @@ describe('Request Tree drag\'n drop', function () {
   });
 
   it('should move a leaf into root node', done => {
-    let tree = new RequestTree('#main', parse('(f1[value=1] || f2[value=2]) && (f3[value=3] || f4[value=4])'), options);
+    let tree = new BinexTree('#main', parse('(f1[value=1] || f2[value=2]) && (f3[value=3] || f4[value=4])'), options);
     let changeTriggered = false;
     expect(tree).to.have.property('data');
 
@@ -72,7 +71,7 @@ describe('Request Tree drag\'n drop', function () {
   });
 
   it('should move a leaf into another node', done => {
-    let tree = new RequestTree('#main', parse('f1[value=1] || (f3[value=3] && f4[value=4])'), options);
+    let tree = new BinexTree('#main', parse('f1[value=1] || (f3[value=3] && f4[value=4])'), options);
     let changeTriggered = false;
     expect(tree).to.have.property('data');
 
@@ -99,7 +98,7 @@ describe('Request Tree drag\'n drop', function () {
   });
 
   it('should not move a root node', done => {
-    let tree = new RequestTree('#main', parse('f1[value=1] || f2[value=2]'), options);
+    let tree = new BinexTree('#main', parse('f1[value=1] || f2[value=2]'), options);
     let changeTriggered = false;
     expect(tree).to.have.property('data');
 
@@ -122,7 +121,7 @@ describe('Request Tree drag\'n drop', function () {
   });
 
   it('should not move leaf into another leaf', done => {
-    let tree = new RequestTree('#main', parse('f1[value=1] || f2[value=2]'), options);
+    let tree = new BinexTree('#main', parse('f1[value=1] || f2[value=2]'), options);
     let changeTriggered = false;
     expect(tree).to.have.property('data');
 
@@ -148,7 +147,7 @@ describe('Request Tree drag\'n drop', function () {
   });
 
   it('should not consider small movement as drag operations', done => {
-    let tree = new RequestTree('#main', parse('f1[value=1] || f2[value=2]'), options);
+    let tree = new BinexTree('#main', parse('f1[value=1] || f2[value=2]'), options);
     expect(tree).not.to.have.property('discardedDrag');
     let changeTriggered = false;
     // Wait for layout animation
@@ -165,7 +164,7 @@ describe('Request Tree drag\'n drop', function () {
   });
 
   it('should keep ordering when aborting the operation', done => {
-    let tree = new RequestTree('#main', parse('f1[value=1] && f2[value=2] && f3[value=3]'), options);
+    let tree = new BinexTree('#main', parse('f1[value=1] && f2[value=2] && f3[value=3]'), options);
     let changeTriggered = false;
     expect(tree).to.have.property('data');
 
@@ -192,7 +191,7 @@ describe('Request Tree drag\'n drop', function () {
   });
 
   it('should ignore drag event without drag start', done => {
-    let tree = new RequestTree('#main', parse('f1[value=1] && f2[value=2] && f3[value=3]'), options);
+    let tree = new BinexTree('#main', parse('f1[value=1] && f2[value=2] && f3[value=3]'), options);
     // Wait for layout animation
     setTimeout(() => {
       expect(() => tree.onDrag({}, tree.data)).not.to.throw(Error);
@@ -201,7 +200,7 @@ describe('Request Tree drag\'n drop', function () {
   });
 
   it('should ignore drop event without drag start', done => {
-    let tree = new RequestTree('#main', parse('f1[value=1] && f2[value=2] && f3[value=3]'), options);
+    let tree = new BinexTree('#main', parse('f1[value=1] && f2[value=2] && f3[value=3]'), options);
     // Wait for layout animation
     setTimeout(() => {
       expect(() => tree.onDrop({}, tree.data)).not.to.throw(Error);

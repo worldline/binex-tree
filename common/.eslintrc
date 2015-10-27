@@ -1,6 +1,0 @@
----
-globals:
-  require: true
-
-env:
-  browser: true

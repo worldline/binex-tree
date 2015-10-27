@@ -1,6 +1,6 @@
 import d3 from 'd3';
 import {translateToTree, assign, translateFromTree, formatNumber} from '../../src/utils/tools';
-import {parse} from 'targeting-engine-common';
+import {parse} from './test-utilities';
 const expect = chai.expect;
 chai.config.truncateThreshold = 0;
 
@@ -76,7 +76,7 @@ describe('translateToTree', () => {
   });
 
   it('should handle logical and', () => {
-    expect(translateToTree(parse('f1[value < 10] || f2[loc > 20,10,4] && f3[time = 10]'))).to.deep.equals({
+    expect(translateToTree(parse('f1[value < 10] || f2[value > 20] && f3[value = 10]'))).to.deep.equals({
       name: '$or',
       children: [{
         name: 'f1',
@@ -88,13 +88,13 @@ describe('translateToTree', () => {
         name: '$and',
         children: [{
           name: 'f2',
-          loc: {
+          value: {
            operator: '>',
-           operand: {lng: 20, lat: 10, rad: 4}
+           operand: 20
           }
         }, {
           name: 'f3',
-          time: {
+          value: {
            operator: '=',
            operand: 10
           }

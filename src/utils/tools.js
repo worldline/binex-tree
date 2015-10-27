@@ -107,20 +107,20 @@ export function translateToTree(data) {
 export function translateFromTree(tree) {
   let data = {};
   switch (tree.name) {
-    case '$and':
-    case '$or':
-      if (tree.children) {
-        data[tree.name] = tree.children.map(translateFromTree).filter(n => Object.keys(n).length > 0);
+  case '$and':
+  case '$or':
+    if (tree.children) {
+      data[tree.name] = tree.children.map(translateFromTree).filter(n => Object.keys(n).length > 0);
+    }
+    break;
+  default:
+    data.name = tree.name;
+    for (let prop in tree) {
+      // copy everything that was not added by d3 layout.
+      if (['parent', 'x', 'y', 'depth', 'name', 'width', 'height', '__id'].indexOf(prop) === -1) {
+        data[prop] = tree[prop];
       }
-      break;
-    default:
-      data.name = tree.name;
-      for (let prop in tree) {
-        // copy everything that was not added by d3 layout.
-        if (['parent', 'x', 'y', 'depth', 'name', 'width', 'height', '__id'].indexOf(prop) === -1) {
-          data[prop] = tree[prop];
-        }
-      }
+    }
   }
   return data;
 }
