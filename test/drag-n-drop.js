@@ -21,7 +21,7 @@ describe('Request Tree drag\'n drop', function() {
   });
 
   it('should revert aborted drag', done => {
-    let tree = new BinexTree('#main', {
+    let data = {
       $and: [{
         name: 'value',
         value: {operator: '=', operand: 'something long'}
@@ -34,8 +34,9 @@ describe('Request Tree drag\'n drop', function() {
           value: {operator: '>', operand: 77}
         }]
       }]
-    }, options);
+    };
     let changeTriggered = false;
+    let tree = new BinexTree('#main', data, options);
     expect(tree).to.have.property('data');
 
     // Wait for layout animation
@@ -78,7 +79,7 @@ describe('Request Tree drag\'n drop', function() {
         }]
       }]
     }, options);
-    let changeTriggered = false;
+    let result = null;
     expect(tree).to.have.property('data');
 
     // Wait for layout animation
@@ -87,7 +88,7 @@ describe('Request Tree drag\'n drop', function() {
       let parent = dragged.parent;
       let dest = extractNodes(tree.data, 0).find(d => d.name && d.name === '$and');
       let origin = {x: dragged.x, y: dragged.y};
-      tree.on('change', () => changeTriggered = true);
+      tree.on('change', d => result = d);
 
       dragNode(tree, dragged, dest, () => {
         // Wait for abort animation
@@ -96,7 +97,25 @@ describe('Request Tree drag\'n drop', function() {
           expect(dragged).to.have.property('y').that.is.not.equal(origin.y);
           expect(dragged).to.have.property('parent').that.is.not.equal(parent);
           expect(dragged).to.have.property('parent').that.equals(dest);
-          expect(changeTriggered, 'change event not fired').to.be.true;
+          expect(result).to.deep.equals({
+            $and: [{
+              $or: [{
+                name: 'f2',
+                value: {operator: '=', operand: 2}
+              }]
+            }, {
+              $or: [{
+                name: 'f3',
+                value: {operator: '=', operand: 3}
+              }, {
+                name: 'f4',
+                value: {operator: '=', operand: 4}
+              }]
+            }, {
+              name: 'f1',
+              value: {operator: '=', operand: 1}
+            }]
+          });
           done();
         }, animDuration * 1.2);
       });
@@ -118,7 +137,7 @@ describe('Request Tree drag\'n drop', function() {
         }]
       }]
     }, options);
-    let changeTriggered = false;
+    let result = null;
     expect(tree).to.have.property('data');
 
     // Wait for layout animation
@@ -127,7 +146,7 @@ describe('Request Tree drag\'n drop', function() {
       let parent = dragged.parent;
       let dest = extractNodes(tree.data, 1).find(d => d.name && d.name === '$and');
       let origin = {x: dragged.x, y: dragged.y};
-      tree.on('change', () => changeTriggered = true);
+      tree.on('change', d => result = d);
 
       dragNode(tree, dragged, dest, () => {
         // Wait for abort animation
@@ -136,7 +155,20 @@ describe('Request Tree drag\'n drop', function() {
           expect(dragged).to.have.property('y').that.is.not.equal(origin.y);
           expect(dragged).to.have.property('parent').that.is.not.equal(parent);
           expect(dragged).to.have.property('parent').that.equals(dest);
-          expect(changeTriggered, 'change event not fired').to.be.true;
+          expect(result).to.deep.equal({
+            $or: [{
+              $and: [{
+                name: 'f3',
+                value: {operator: '=', operand: 3}
+              }, {
+                name: 'f4',
+                value: {operator: '=', operand: 4}
+              }, {
+                name: 'f1',
+                value: {operator: '=', operand: 1}
+              }]
+            }]
+          });
           done();
         }, animDuration * 1.2);
       });

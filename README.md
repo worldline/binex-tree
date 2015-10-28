@@ -49,13 +49,13 @@ You can launches test on single shot with:
 
 or as a long-running process, which will re-play test on every source file change:
 
-    > gulp test-watch
+    > gulp test-watch (or npm test)
 
 During tests, a coverage report is written under the `coverage/` folder, and the coverage must not drop under given thresholds.
 
 Last but not least, you can check by ourself the instanciated tree locally by running:
 
-    > gulp
+    > gulp (or npm start)
 
 This will start a static web server at http://localhost:8001, which will live-reload opened browsers on every file change.
 

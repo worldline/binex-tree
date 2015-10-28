@@ -117,8 +117,8 @@ export const translateFromTree = tree => {
   default:
     data.name = tree.name;
     for (let prop in tree) {
-      // copy everything that was not added by d3 layout.
-      if (['parent', 'x', 'y', 'depth', 'name', 'width', 'height', '__id'].indexOf(prop) === -1) {
+      // copy everything that was not added by d3 layout and our own code (__id and __value).
+      if (['parent', 'x', 'y', 'depth', 'name', 'width', 'height', '__id', '__value'].indexOf(prop) === -1) {
         data[prop] = tree[prop];
       }
     }
