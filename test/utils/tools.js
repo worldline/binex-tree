@@ -1,6 +1,5 @@
 import d3 from 'd3';
 import {translateToTree, assign, translateFromTree, formatNumber} from '../../src/utils/tools';
-import {parse} from './test-utilities';
 const expect = chai.expect;
 chai.config.truncateThreshold = 0;
 
@@ -43,21 +42,27 @@ describe('formatNumber', () => {
 describe('translateToTree', () => {
 
   it('should not modifiy a single node request', () => {
-    expect(translateToTree(parse('f1[value > "gold" time = 10]'))).to.deep.equals({
+    expect(translateToTree({
       name: 'f1',
-      value: {
-        operator: '>',
-        operand: 'gold'
-      },
-      time: {
-        operator: '=',
-        operand: 10
-      }
+      value: {operator: '>', operand: 'gold'},
+      time: {operator: '=', operand: 10}
+    })).to.deep.equals({
+      name: 'f1',
+      value: {operator: '>', operand: 'gold'},
+      time: {operator: '=', operand: 10}
     });
   });
 
   it('should handle logical or', () => {
-    expect(translateToTree(parse('f1[value < 10] || f2[value > 20]'))).to.deep.equals({
+    expect(translateToTree({
+      $or: [{
+        name: 'f1',
+        value: {operator: '<', operand: 10}
+      }, {
+        name: 'f2',
+        value: {operator: '>', operand: 20}
+      }]
+    })).to.deep.equals({
       name: '$or',
       children: [{
         name: 'f1',
@@ -76,7 +81,20 @@ describe('translateToTree', () => {
   });
 
   it('should handle logical and', () => {
-    expect(translateToTree(parse('f1[value < 10] || f2[value > 20] && f3[value = 10]'))).to.deep.equals({
+    expect(translateToTree({
+      $or: [{
+        name: 'f1',
+        value: {operator: '<', operand: 10}
+      }, {
+        $and: [{
+          name: 'f2',
+          value: {operator: '>', operand: 20}
+        }, {
+          name: 'f3',
+          value: {operator: '=', operand: 10}
+        }]
+      }]
+    })).to.deep.equals({
       name: '$or',
       children: [{
         name: 'f1',
@@ -89,14 +107,14 @@ describe('translateToTree', () => {
         children: [{
           name: 'f2',
           value: {
-           operator: '>',
-           operand: 20
+            operator: '>',
+            operand: 20
           }
         }, {
           name: 'f3',
           value: {
-           operator: '=',
-           operand: 10
+            operator: '=',
+            operand: 10
           }
         }]
       }]
@@ -120,14 +138,14 @@ describe('translateFromTree', () => {
         children: [{
           name: 'f2',
           loc: {
-           operator: '>',
-           operand: {lng: 20, lat: 10, rad: 4}
+            operator: '>',
+            operand: {lng: 20, lat: 10, rad: 4}
           }
         }, {
           name: 'f3',
           time: {
-           operator: '=',
-           operand: 10
+            operator: '=',
+            operand: 10
           }
         }]
       }]
@@ -145,14 +163,14 @@ describe('translateFromTree', () => {
         $and: [{
           name: 'f2',
           loc: {
-           operator: '>',
-           operand: {lng: 20, lat: 10, rad: 4}
+            operator: '>',
+            operand: {lng: 20, lat: 10, rad: 4}
           }
         }, {
           name: 'f3',
           time: {
-           operator: '=',
-           operand: 10
+            operator: '=',
+            operand: 10
           }
         }]
       }]

@@ -1,6 +1,6 @@
 import d3 from 'd3';
 import BinexTree from '../src/binex-tree';
-import {extractNodes, addIds, parse} from './utils/test-utilities';
+import {extractNodes, addIds} from './utils/test-utilities';
 const expect = chai.expect;
 chai.config.truncateThreshold = 0;
 
@@ -15,7 +15,10 @@ describe('Request Tree', () => {
 
   it('should menu not include removal for root', done => {
     /* eslint no-new: 0 */
-    new BinexTree('#main', addIds(parse('f1 [value = "something long"]')), {animDuration});
+    new BinexTree('#main', addIds({
+      name: 'f1',
+      value: {operator: '=', operand: 'something long'}
+    }), {animDuration});
     setTimeout(() => {
       d3.select('.node[data-id="f1"]').node().dispatchEvent(new MouseEvent('click'));
       let menu = d3.select('.menu');
@@ -29,7 +32,15 @@ describe('Request Tree', () => {
 
   it('should menu not include removal on logical operator root', done => {
     /* eslint no-new: 0 */
-    new BinexTree('#main', addIds(parse('f1[value=1] || f2[value=2]')), {animDuration});
+    new BinexTree('#main', addIds({
+      $or: [{
+        name: 'f1',
+        value: {operator: '=', operand: 1}
+      }, {
+        name: 'f2',
+        value: {operator: '=', operand: 2}
+      }]
+    }), {animDuration});
     setTimeout(() => {
       d3.select('.node[data-id="1"]').node().dispatchEvent(new MouseEvent('click'));
       let menu = d3.select('.menu');
@@ -44,7 +55,15 @@ describe('Request Tree', () => {
 
   it('should menu not include addition on leaves', done => {
     /* eslint no-new: 0 */
-    new BinexTree('#main', addIds(parse('f1[value=1] || f2[value=2]')), {animDuration});
+    new BinexTree('#main', addIds({
+      $or: [{
+        name: 'f1',
+        value: {operator: '=', operand: 1}
+      }, {
+        name: 'f2',
+        value: {operator: '=', operand: 2}
+      }]
+    }), {animDuration});
     setTimeout(() => {
       d3.select('.node[data-id="f1"]').node().dispatchEvent(new MouseEvent('click'));
       let menu = d3.select('.menu');
@@ -59,7 +78,20 @@ describe('Request Tree', () => {
 
   it('should menu include all actions on non-root nodes', done => {
     /* eslint no-new: 0 */
-    new BinexTree('#main', addIds(parse('f1[value=1] || f2[value=2] && f3[value=3]')), {animDuration});
+    new BinexTree('#main', addIds({
+      $or: [{
+        name: 'f1',
+        value: {operator: '=', operand: 1}
+      }, {
+        $and: [{
+          name: 'f2',
+          value: {operator: '=', operand: 2}
+        }, {
+          name: 'f3',
+          value: {operator: '=', operand: 3}
+        }]
+      }]
+    }), {animDuration});
     setTimeout(() => {
       d3.select('.node[data-id="2"]').node().dispatchEvent(new MouseEvent('click'));
       let menu = d3.select('.menu');
@@ -73,7 +105,10 @@ describe('Request Tree', () => {
   });
 
   it('should menu be cleared when clicking elsewhere', done => {
-    let tree = new BinexTree('#main', addIds(parse('f1[value=1]')), {animDuration});
+    let tree = new BinexTree('#main', addIds({
+      name: 'f1',
+      value: {operator: '=', operand: 1}
+    }), {animDuration});
     setTimeout(() => {
       d3.select('.node[data-id="f1"]').node().dispatchEvent(new MouseEvent('click'));
       expect(d3.select('.menu').empty(), 'no menu found').to.be.false;
@@ -84,7 +119,20 @@ describe('Request Tree', () => {
   });
 
   it('should remove leave', done => {
-    let tree = new BinexTree('#main', addIds(parse('f1[value=1] || f2[value=2] && f3[value=3]')), {animDuration});
+    let tree = new BinexTree('#main', addIds({
+      $or: [{
+        name: 'f1',
+        value: {operator: '=', operand: 1}
+      }, {
+        $and: [{
+          name: 'f2',
+          value: {operator: '=', operand: 2}
+        }, {
+          name: 'f3',
+          value: {operator: '=', operand: 3}
+        }]
+      }]
+    }), {animDuration});
     let changedTriggered = false;
 
     setTimeout(() => {
@@ -107,7 +155,20 @@ describe('Request Tree', () => {
   });
 
   it('should trigger node edition on leaves', done => {
-    let tree = new BinexTree('#main', addIds(parse('f1[value=1] || f2[value=2] && f3[value=3]')), {animDuration});
+    let tree = new BinexTree('#main', addIds({
+      $or: [{
+        name: 'f1',
+        value: {operator: '=', operand: 1}
+      }, {
+        $and: [{
+          name: 'f2',
+          value: {operator: '=', operand: 2}
+        }, {
+          name: 'f3',
+          value: {operator: '=', operand: 3}
+        }]
+      }]
+    }), {animDuration});
     let editionTriggered = false;
 
     setTimeout(() => {
@@ -128,7 +189,20 @@ describe('Request Tree', () => {
   });
 
   it('should trigger node edition on nodes', done => {
-    let tree = new BinexTree('#main', addIds(parse('f1[value=1] || f2[value=2] && f3[value=3]')), {animDuration});
+    let tree = new BinexTree('#main', addIds({
+      $or: [{
+        name: 'f1',
+        value: {operator: '=', operand: 1}
+      }, {
+        $and: [{
+          name: 'f2',
+          value: {operator: '=', operand: 2}
+        }, {
+          name: 'f3',
+          value: {operator: '=', operand: 3}
+        }]
+      }]
+    }), {animDuration});
     let editionTriggered = false;
 
     setTimeout(() => {
@@ -149,7 +223,20 @@ describe('Request Tree', () => {
   });
 
   it('should trigger node addition on nodes', done => {
-    let tree = new BinexTree('#main', addIds(parse('f1[value=1] || f2[value=2] && f3[value=3]')), {animDuration});
+    let tree = new BinexTree('#main', addIds({
+      $or: [{
+        name: 'f1',
+        value: {operator: '=', operand: 1}
+      }, {
+        $and: [{
+          name: 'f2',
+          value: {operator: '=', operand: 2}
+        }, {
+          name: 'f3',
+          value: {operator: '=', operand: 3}
+        }]
+      }]
+    }), {animDuration});
     let addToTriggered = false;
 
     setTimeout(() => {

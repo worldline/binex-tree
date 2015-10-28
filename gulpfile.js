@@ -1,26 +1,20 @@
-var gulp = require('gulp');
-var gutil = require('gulp-util');
-var webserver = require('gulp-webserver');
-var eslint = require('gulp-eslint');
-var rm = require('rimraf');
-var karma = require('karma').server;
-var path = require('path');
-var _ = require('lodash');
-var webpack = require('webpack');
-var Extractor = require('extract-text-webpack-plugin');
-var log = gutil.log;
-var colors = gutil.colors;
+'use strict';
 
-// Coverage thresholds: bellow first is error, bellow second is warning
-var defaultThresholds = {
-  branches: [70, 90],
-  functions: [70, 90],
-  lines: [80, 90],
-  statements: [70, 90]
-};
+const gulp = require('gulp');
+const gutil = require('gulp-util');
+const webserver = require('gulp-webserver');
+const eslint = require('gulp-eslint');
+const rm = require('rimraf');
+const karma = require('karma').server;
+const path = require('path');
+const _ = require('lodash');
+const webpack = require('webpack');
+const Extractor = require('extract-text-webpack-plugin');
+const log = gutil.log;
+const colors = gutil.colors;
 
 // Single path declarations
-var paths = {
+const paths = {
   // all ES6 files to be linted
   sources: './src/**/*.js',
   // exception: test utilities must not be served by karma
@@ -34,7 +28,7 @@ var paths = {
 };
 
 // Karma configuration
-var karmaConf = {
+const karmaConf = {
   configFile: '',
   basePath: './',
   frameworks: ['html-prepend', 'mocha', 'chai'],
@@ -88,20 +82,20 @@ var karmaConf = {
 };
 karmaConf.preprocessors[paths.tests] = ['webpack', 'sourcemap'];
 
-function reportWebpackErrors (stats) {
+const reportWebpackErrors = stats => {
   stats = stats.toJson({
-    cached: false,
+    cached: false
   });
-  stats.errors.forEach(function (err) {
-    var idx = err.indexOf(' in ');
-    log(colors.red('error') + ': ' + err.substring(0, idx === -1 ? err.length : idx));
+  stats.errors.forEach(err => {
+    let idx = err.indexOf(' in ');
+    log(`${colors.red('error')}: ${err.substring(0, idx === -1 ? err.length : idx)}`);
   });
   return stats;
-}
+};
 
-function bundle(entry, watch, noDep) {
+const bundle = (entry, watch, noDep) => {
 
-  var conf = _.assign({}, {
+  let conf = _.assign({}, {
     entry: path.resolve(entry),
     output: {
       path: path.resolve(paths.dest),
@@ -118,7 +112,7 @@ function bundle(entry, watch, noDep) {
       }]
     },
     resolve: {
-      extensions: ['', '.js', '.scss'],
+      extensions: ['', '.js', '.scss']
     },
     plugins: []
   });
@@ -158,92 +152,89 @@ function bundle(entry, watch, noDep) {
     }
   }
 
-  var bundler = webpack(conf);
+  let bundler = webpack(conf);
 
   return function(done) {
     if (watch) {
-      bundler.watch({}, function (err, stats) {
-        reportWebpackErrors(stats).modules.forEach(function (module) {
-          log(module.name + colors.cyan(' rebuilt'));
+      bundler.watch({}, (err, stats) => {
+        reportWebpackErrors(stats).modules.forEach(mod => {
+          log(mod.name + colors.cyan(' rebuilt'));
         });
       });
       done();
     } else {
-      bundler.run(function(err, stats) {
+      bundler.run((err, stats) => {
         stats = reportWebpackErrors(stats);
-        if(stats.errors.length > 0) {
+        if (stats.errors.length > 0) {
           return done(new gutil.PluginError('bundle', 'errors found'));
         }
         done(err);
       });
     }
   };
-}
+};
 
 // Generated file cleaning
-gulp.task('clean', function(done) {
-  var toRemove = [paths.dest, paths.coverage];
-  var removed = 0;
-  var lastErr = null;
+gulp.task('clean', done => {
+  let toRemove = [paths.dest, paths.coverage];
+  let removed = 0;
+  let lastErr = null;
 
-  toRemove.forEach(function(path) {
-    rm(path, function(err) {
+  toRemove.forEach(removedPath => {
+    rm(removedPath, err => {
       removed++;
       lastErr = err ? err : lastErr;
       if (removed === toRemove.length) {
         done(lastErr);
       }
     });
-  })
+  });
 });
 
 // Lint sources with esLint
-gulp.task('lint', function() {
-  return gulp.src(paths.sources.concat(paths.tests))
-    .pipe(eslint())
-    .pipe(eslint.format())
-    .pipe(eslint.failAfterError());
+gulp.task('lint', () => {
+  return gulp.src([paths.sources, paths.tests]).
+    pipe(eslint()).
+    pipe(eslint.format()).
+    pipe(eslint.failAfterError());
 });
 
 // Test tasks, entierly relying on karma
-gulp.task('test', function (done) {
+gulp.task('test', done => {
   karma.start(_.assign({
     singleRun: true
-  }, karmaConf), function(err) {
+  }, karmaConf), err => {
     done();
     process.exit(err);
   });
 });
 
-gulp.task('test-watch', function (done) {
+gulp.task('test-watch', done => {
   karma.start(_.assign({
     singleRun: false
   }, karmaConf), done);
 });
 
 // Make distribution files
-gulp.task('dist', ['lint'], function(done) {
-  bundle(paths.main, false)(function(err) {
+gulp.task('dist', ['lint'], done => {
+  bundle(paths.main, false)(err => {
     if (err) {
       return done(err);
     }
-    return done();
     bundle(paths.main, false, true)(done);
   });
 });
 
 // Default development task is to build, then to watch for files changes.
-gulp.task('default', ['lint'], function() {
-  bundle(paths.example, true)(function() {
-    gulp.src('.')
-      .pipe(webserver({
+gulp.task('default', ['lint'], () => {
+  bundle(paths.example, true)(() => {
+    gulp.src('.').
+      pipe(webserver({
         port: 8001,
         livereload: {
           enable: true,
-          filter: function(fileName) {
-            // only built files and html page are to be watched
-            return fileName.match(/((\\|\/)build|index.html$)/) && !fileName.match(/.map$/);
-          }
+          // only built files and html page are to be watched
+          filter: fileName => fileName.match(/((\\|\/)build|index.html$)/) && !fileName.match(/.map$/)
         }
       }));
     gulp.watch(paths.sources, ['lint']);

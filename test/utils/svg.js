@@ -5,17 +5,17 @@ const expect = chai.expect;
 describe('getStyles', () => {
 
   let svg;
-  let styles;
+  let styleDefaults;
 
   before(() => {
     // given an existing SVG node
     svg = d3.select('#main').append('svg');
-    svg.append('g')
-      .append('rect')
-        .attr('class', 'label');
+    svg.append('g').
+      append('rect').
+        attr('class', 'label');
 
     // given some styles directly set or inherited on that node
-    styles = d3.select('head').append('style').text(`
+    styleDefaults = d3.select('head').append('style').text(`
 
       svg {
         font-family: Arial;
@@ -84,7 +84,7 @@ describe('getStyles', () => {
   });
 
   after(() => {
-    styles && styles.remove();
+    styleDefaults && styleDefaults.remove();
     svg && svg.remove();
   });
 });

@@ -6,14 +6,15 @@ import d3 from 'd3';
  * applied the screen ratio. If the node is inside a zoomed element, zoom must be given.
  *
  * @param {d3.selection|SVGElement} node - from which css styles are retrieved
+ * @param {Object} defaults - hash containing default values that will be returned if expected style is unset.
  * @param {String[]} styles - styles name you whish to consult
  * @return {Object} an object which properties are the retrieved styles
  */
-export function getStyles(node, defaults, ...styles) {
+export const getStyles = (node, defaults, ...styles) => {
   node = node instanceof d3.selection ? node.node() : node;
   let results = {};
   let values = window.getComputedStyle(node);
-  let selector = '.' + node.getAttribute('class').replace(/ /g, '.');
+  let selector = `.${node.getAttribute('class').replace(/ /g, '.')}`;
   styles.forEach(style => {
     let value = values[style];
     if (value && value !== '0' && value !== '0px') {
@@ -23,4 +24,4 @@ export function getStyles(node, defaults, ...styles) {
     }
   });
   return results;
-}
+};

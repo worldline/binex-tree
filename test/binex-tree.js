@@ -1,6 +1,6 @@
 import d3 from 'd3';
 import BinexTree from '../src/binex-tree';
-import {extractNodes, addIds, parse} from './utils/test-utilities';
+import {extractNodes, addIds} from './utils/test-utilities';
 import {formatNumber} from '../src/utils/tools';
 const expect = chai.expect;
 chai.config.truncateThreshold = 0;
@@ -28,10 +28,13 @@ describe('Request Tree', () => {
     expect(tree).to.have.property('svg').that.exists;
   });
 
-  it('should build tree from a given request', (done) => {
-    let request = parse('mkt_sgm [value = "gold"]');
+  it('should build tree from a given request', done => {
+    let request = {
+      name: 'mkt_sgm',
+      value: {operator: '=', operand: 'gold'}
+    };
     let sync = true;
-    let tree = new BinexTree('#main', JSON.parse(JSON.stringify(request))).on('change', data => {
+    let tree = new BinexTree('#main', request).on('change', data => {
       expect(sync, 'change event was triggered synchronously !').to.be.false;
       expect(data).to.deep.equals(request);
       done();
@@ -48,6 +51,30 @@ describe('Request Tree', () => {
     expect(tree).to.have.property('svg').that.exists;
   });
 
+  it('should not modify incoming request during construction', done => {
+    let request = {
+      $and: [{
+        name: 'gender',
+        value: {operator: '=', operand: 'male'}
+      }, {
+        $or: [{
+          name: 'age',
+          value: {operator: '>=', operand: 7}
+        }, {
+          name: 'age',
+          value: {operator: '<=', operand: 77}
+        }]
+      }]
+    };
+    let copy = JSON.parse(JSON.stringify(request));
+    let tree = new BinexTree('#main', request).on('change', data => {
+      expect(data, 'data returned by onChange').to.deep.equal(copy);
+      done();
+    });
+    expect(request, 'using the same reference').not.to.equal(tree.data);
+    expect(request, 'constructor parameter modification').to.deep.equal(copy);
+  });
+
   it('should customize default options in constructor', () => {
     let tree = new BinexTree('#main', {$and: []}, {initialScale: 1, vSpacing: 1.5, other: 'unknown'});
     expect(tree).to.have.property('initialScale').that.equals(1);
@@ -61,7 +88,20 @@ describe('Request Tree', () => {
   });
 
   it('should represent multiple hierarchichal levels', () => {
-    let tree = new BinexTree('#main', parse('gender [value = "male"] && (age [value < 7] || age [value > 77])'));
+    let tree = new BinexTree('#main', {
+      $and: [{
+        name: 'gender',
+        value: {operator: '=', operand: 'male'}
+      }, {
+        $or: [{
+          name: 'age',
+          value: {operator: '<', operand: 7}
+        }, {
+          name: 'age',
+          value: {operator: '>', operand: 77}
+        }]
+      }]
+    });
     expect(tree).to.have.property('data');
 
     // root is logical and
@@ -96,7 +136,20 @@ describe('Request Tree', () => {
   });
 
   it('should use largest node inside a column', () => {
-    let tree = new BinexTree('#main', parse('f1 [value = "something long"] && (age [value < 7] || age [value > 77])'));
+    let tree = new BinexTree('#main', {
+      $and: [{
+        name: 'f1',
+        value: {operator: '=', operand: 'something long'}
+      }, {
+        $or: [{
+          name: 'age',
+          value: {operator: '<', operand: 7}
+        }, {
+          name: 'age',
+          value: {operator: '>', operand: 77}
+        }]
+      }]
+    });
     expect(tree).to.have.property('data');
     let column2 = extractNodes(tree.data, 1);
 
@@ -116,7 +169,20 @@ describe('Request Tree', () => {
   });
 
   it('should collapse column to fit largest node', () => {
-    let tree = new BinexTree('#main', parse('f1 [value = "something long"] && (age [value < 7] || age [value > 77])'));
+    let tree = new BinexTree('#main', {
+      $and: [{
+        name: 'f1',
+        value: {operator: '=', operand: 'something long'}
+      }, {
+        $or: [{
+          name: 'age',
+          value: {operator: '<', operand: 7}
+        }, {
+          name: 'age',
+          value: {operator: '>', operand: 77}
+        }]
+      }]
+    });
     expect(tree).to.have.property('data');
 
     let column1 = extractNodes(tree.data, 0);
@@ -134,8 +200,16 @@ describe('Request Tree', () => {
   });
 
   it('should customize text formating', () => {
-    let tree = new BinexTree('#main', addIds(parse('f1 [value = "something long"] && age [value < 7]')), {
-      format: (d) => `prefix_${d.name}`
+    let tree = new BinexTree('#main', addIds({
+      $and: [{
+        name: 'f1',
+        value: {operator: '=', operand: 'something long'}
+      }, {
+        name: 'age',
+        value: {operator: '<', operand: 7}
+      }]
+    }), {
+      format: d => `prefix_${d.name}`
     });
     let node = tree.svg.select('[data-id="f1"] > .text');
     expect(node.empty(), 'f1 not found').to.be.false;
@@ -150,10 +224,18 @@ describe('Request Tree', () => {
     let values = {
       f1: 1000,
       age: 500,
-      '1': 1200
+      1: 1200
     };
     let thousandSeparator = '.';
-    let tree = new BinexTree('#main', addIds(parse('f1 [value = "something long"] && age [value < 7]')), {
+    let tree = new BinexTree('#main', addIds({
+      $and: [{
+        name: 'f1',
+        value: {operator: '=', operand: 'something long'}
+      }, {
+        name: 'age',
+        value: {operator: '<', operand: 7}
+      }]
+    }), {
       fetch: (d, done) => done(null, values[d.id]),
       thousandSeparator
     });
@@ -176,7 +258,15 @@ describe('Request Tree', () => {
       f1: 1000,
       age: 500
     };
-    let tree = new BinexTree('#main', addIds(parse('f1 [value = "something long"] && age [value < 7]')), {
+    let tree = new BinexTree('#main', addIds({
+      $and: [{
+        name: 'f1',
+        value: {operator: '=', operand: 'something long'}
+      }, {
+        name: 'age',
+        value: {operator: '<', operand: 7}
+      }]
+    }), {
       fetch: (d, done) => {
         if (values[d.id]) {
           return done(null, values[d.name]);

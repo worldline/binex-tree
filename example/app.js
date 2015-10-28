@@ -48,7 +48,7 @@ input.property('value', JSON.stringify(request))
 
 widget.on('change', (data) => {
   console.log(data);
-  input.property('value', data);
+  input.property('value', JSON.stringify(data));
 }).on('editNode', (data) => {
   console.log('Node to edit', data);
 }).on('addToNode', (data) => {

@@ -51,5 +51,8 @@
     "dist": "gulp dist",
     "start": "gulp",
     "test": "gulp test-watch"
-  }
+  },
+  "engines" : {
+    "node" : ">4.0.0"
+   }
 }

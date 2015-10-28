@@ -8,10 +8,10 @@ import d3 from 'd3';
  * @param {String} type - type name
  * @return {Boolean} true if variable has the expected type, false otherwise
  */
-export function is (obj, type) {
+export const is = (obj, type) => {
   let clazz = Object.prototype.toString.call(obj).slice(8, -1).toLowerCase();
   return obj !== undefined && obj !== null && clazz === type.toLowerCase().trim();
-}
+};
 
 /**
  * Add a zoomable g layer inside the tree's svg node.
@@ -24,23 +24,23 @@ export function is (obj, type) {
  * @param {Behavior} tree.zoom - attribute used to store d3's zoom behavior
  * @return {SVGElement} g group created
  */
-export function makeZoomableGrid(tree) {
-  tree.zoom = d3.behavior.zoom()
-    .translate([tree.width * .25, 0])
-    .scale(tree.initialScale)
-    .scaleExtent(tree.scaleExtent)
-    .on('zoom', () => {
+export const makeZoomableGrid = tree => {
+  tree.zoom = d3.behavior.zoom().
+    translate([0, tree.height * 0.5]).
+    scale(tree.initialScale).
+    scaleExtent(tree.scaleExtent).
+    on('zoom', () => {
       // Eventually, animate the move
       tree.grid.transition().attr('transform', `translate(${d3.event.translate}) scale(${d3.event.scale})`);
     });
 
   tree.svg.on('click', tree.hideMenu.bind(tree));
 
-  tree.grid = tree.svg.call(tree.zoom)
-    .append('g')
-      .attr('transform', `translate(${tree.zoom.translate()}) scale(${tree.zoom.scale()})`);
+  tree.grid = tree.svg.call(tree.zoom).
+    append('g').
+      attr('transform', `translate(${tree.zoom.translate()}) scale(${tree.zoom.scale()})`);
   return tree.grid;
-}
+};
 
 /**
  * Get biggest node representation, and compute columns widths.
@@ -52,11 +52,12 @@ export function makeZoomableGrid(tree) {
  * @return {Number} return.biggest.height - height of the biggest node
  * @return {Number[]} return.columns - array of column widths
  */
-export function getDimensions(node, hSpacing) {
+export const getDimensions = (node, hSpacing) => {
   let biggest = {width: 0, height: 0};
   let columns = [];
 
   // Do not use fat arrow to have this aiming at current SVGElement
+  /* eslint no-invalid-this: 0 */
   node.each(function(d) {
     let {width, height} = this.getBBox();
     let depth = d.depth;
@@ -75,14 +76,14 @@ export function getDimensions(node, hSpacing) {
     }
   });
   return {biggest, columns};
-}
+};
 
 /**
  * This function translate a parsed data (grammar parser's output) into a D3 compliant tree structure.
  * @param {Object} data - the wellformated parsed data
  * @return {Object} a D3 tree structure
  */
-export function translateToTree(data) {
+export const translateToTree = data => {
   let keys = Object.keys(data);
   let isAnd = keys.indexOf('$and') >= 0;
   let isOr = keys.indexOf('$or') >= 0;
@@ -96,7 +97,7 @@ export function translateToTree(data) {
     return result;
   }
   return data;
-}
+};
 
 /**
  * This function translate a tree data (that may have be modified by d3's layout)
@@ -104,7 +105,7 @@ export function translateToTree(data) {
  * @param {Object} tree - D3 tree structure
  * @return {Object} corresponding wellformated parsed data
  */
-export function translateFromTree(tree) {
+export const translateFromTree = tree => {
   let data = {};
   switch (tree.name) {
   case '$and':
@@ -123,7 +124,7 @@ export function translateFromTree(tree) {
     }
   }
   return data;
-}
+};
 
 /**
  * Function factory that will return a SVGPath generator between two positions
@@ -135,7 +136,7 @@ export function translateFromTree(tree) {
  * @return {Function} SVGPath generator, that takes an object with 'source' and 'target' points (x, y, width)
  * and that return a valid SVG path (usable for path 'd' attribute)
  */
-export function makeElbow(columns, hSpacing) {
+export const makeElbow = (columns, hSpacing) => {
   return ({source, target}) => {
     let start = source.y + (source.width || 0);
     // Elbow will takes place in horizontal spacing between levels
@@ -143,7 +144,7 @@ export function makeElbow(columns, hSpacing) {
     let corner = target.y - (space - space / hSpacing) / 2;
     return `M${start},${source.x}H${corner}V${target.x}H${target.y}`;
   };
-}
+};
 
 /**
  * Deep copy of objects into another.
@@ -155,7 +156,7 @@ export function makeElbow(columns, hSpacing) {
  * @param {Object[]} sources - any object you whish to copy into the result oject
  * @return {Object} the resulting object.
  */
-export function assign(target, ...sources) {
+export const assign = (target, ...sources) => {
   sources.forEach(source => {
     for (let property in source) {
       if (is(source[property], 'object')) {
@@ -169,18 +170,18 @@ export function assign(target, ...sources) {
     }
   });
   return target;
-}
+};
 
 /**
  * Format a given natural integer by adding thousand serparators.
  * Decimals and negative numbers are not supported.
  * @param {Number} number - formatted number
- * @param {String = ' '} separator - thousand separator used
+ * @param {String} separator = ' '- thousand separator used
  * @return {String} the formatted number
  */
-export function formatNumber(number, separator = ' ') {
+export const formatNumber = (number, separator = ' ') => {
   if (isNaN(parseInt(number))) {
     return number;
   }
-  return Math.floor(+number).toString().split('').reverse().reduce((res, digit, i) => digit + (i > 0 && i % 3 === 0 ? separator : '' ) + res);
-}
+  return Math.floor(+number).toString().split('').reverse().reduce((res, digit, i) => digit + (i > 0 && i % 3 === 0 ? separator : '') + res);
+};
