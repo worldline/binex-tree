@@ -21,18 +21,13 @@ Then get external dependencies. Network access is required, so don't forget to c
 
 Then build everything:
 
-    > gulp build
-    [15:07:58] Using gulpfile C:\Workspaces\binex-tree\gulpfile.js
-    [15:07:58] Starting 'build'...
-    [15:07:58] Starting 'clean'...
-    [15:07:59] Finished 'clean' after 133 ms
-    [15:07:59] Starting 'lint'...
-    [15:07:59] Starting 'styles'...
-    [15:07:59] Finished 'lint' after 227 ms
-    [15:07:59] Starting 'bundle'...
-    [15:08:06] Finished 'styles' after 7.77 s
-    [15:08:06] Finished 'bundle' after 7.72 s
-    [15:08:06] Finished 'build' after 8.11 s
+    > npm run dist
+    [17:02:42] Using gulpfile C:\workspace\binex-tree\gulpfile.js
+    [17:02:42] Starting 'lint'...
+    [17:02:44] Finished 'lint' after 2.02 s
+    [17:02:44] Starting 'dist'...
+    [17:02:53] Finished 'dist' after 8.9 s
+
 
 Code is now available under the `build/` folder.
 
