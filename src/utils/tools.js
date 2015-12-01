@@ -25,20 +25,29 @@ export const is = (obj, type) => {
  * @return {SVGElement} g group created
  */
 export const makeZoomableGrid = tree => {
+  let zoomLevel;
+
   tree.zoom = d3.behavior.zoom().
     translate([0, tree.height * 0.5]).
     scale(tree.initialScale).
     scaleExtent(tree.scaleExtent).
     on('zoom', () => {
-      // Eventually, animate the move
-      tree.grid.transition().attr('transform', `translate(${d3.event.translate}) scale(${d3.event.scale})`);
+      // Eventually, animate the zoom
+      let node = tree.grid;
+      if (zoomLevel !== d3.event.scale) {
+        node = node.transition();
+        zoomLevel = d3.event.scale;
+      }
+      node.attr('transform', `translate(${d3.event.translate}) scale(${d3.event.scale})`);
     });
 
   tree.svg.on('click', tree.hideMenu.bind(tree));
 
+  zoomLevel = tree.zoom.scale();
+
   tree.grid = tree.svg.call(tree.zoom).
     append('g').
-      attr('transform', `translate(${tree.zoom.translate()}) scale(${tree.zoom.scale()})`);
+      attr('transform', `translate(${tree.zoom.translate()}) scale(${zoomLevel})`);
   return tree.grid;
 };
 
