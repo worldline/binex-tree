@@ -6,4 +6,5 @@
 /.project
 .settings
 .vscode
+.idea
 targeting-engine-loader/*target*.csv

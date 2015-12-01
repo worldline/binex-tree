@@ -149,6 +149,7 @@ const bundle = (entry, watch, noDep) => {
     } else {
       // Or rename to indicate everything is included
       conf.output.filename = conf.output.filename.replace('.js', '.standalone.js');
+      conf.output.libraryTarget = 'umd';
     }
   }
 
