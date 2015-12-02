@@ -5,9 +5,8 @@ const gutil = require('gulp-util');
 const webserver = require('gulp-webserver');
 const eslint = require('gulp-eslint');
 const rm = require('rimraf');
-const karma = require('karma').server;
+const karmaServer = require('karma').Server;
 const path = require('path');
-const _ = require('lodash');
 const webpack = require('webpack');
 const Extractor = require('extract-text-webpack-plugin');
 const log = gutil.log;
@@ -34,10 +33,11 @@ const karmaConf = {
   frameworks: ['html-prepend', 'mocha', 'chai'],
   files: [
     paths.tests,
-    'node_modules/babel-core/browser-polyfill.js'
+    'node_modules/babel-polyfill/dist/polyfill.js'
   ],
-  // Will be configured just after
-  preprocessors: {},
+  preprocessors: {
+    [paths.tests]: ['webpack', 'sourcemap']
+  },
   coverageReporter: {
     reporters: [{
       type: 'text-summary'
@@ -80,14 +80,13 @@ const karmaConf = {
     require('./test/html-prepend')
   ]
 };
-karmaConf.preprocessors[paths.tests] = ['webpack', 'sourcemap'];
 
 const reportWebpackErrors = stats => {
   stats = stats.toJson({
     cached: false
   });
   stats.errors.forEach(err => {
-    let idx = err.indexOf(' in ');
+    const idx = err.indexOf(' in ');
     log(`${colors.red('error')}: ${err.substring(0, idx === -1 ? err.length : idx)}`);
   });
   return stats;
@@ -95,7 +94,7 @@ const reportWebpackErrors = stats => {
 
 const bundle = (entry, watch, noDep) => {
 
-  let conf = _.assign({}, {
+  const conf = Object.assign({}, {
     entry: path.resolve(entry),
     output: {
       path: path.resolve(paths.dest),
@@ -119,7 +118,7 @@ const bundle = (entry, watch, noDep) => {
 
   if (watch) {
     // Dev bundle
-    _.assign(conf, {
+    Object.assign(conf, {
       devtool: 'source-map',
       debug: true,
       resolve: {
@@ -153,7 +152,7 @@ const bundle = (entry, watch, noDep) => {
     }
   }
 
-  let bundler = webpack(conf);
+  const bundler = webpack(conf);
 
   return function(done) {
     if (watch) {
@@ -177,7 +176,7 @@ const bundle = (entry, watch, noDep) => {
 
 // Generated file cleaning
 gulp.task('clean', done => {
-  let toRemove = [paths.dest, paths.coverage];
+  const toRemove = [paths.dest, paths.coverage];
   let removed = 0;
   let lastErr = null;
 
@@ -202,18 +201,18 @@ gulp.task('lint', () => {
 
 // Test tasks, entierly relying on karma
 gulp.task('test', done => {
-  karma.start(_.assign({
+  new karmaServer(Object.assign({
     singleRun: true
   }, karmaConf), err => {
     done();
     process.exit(err);
-  });
+  }).start();
 });
 
 gulp.task('test-watch', done => {
-  karma.start(_.assign({
+  new karmaServer(Object.assign({
     singleRun: false
-  }, karmaConf), done);
+  }, karmaConf), done).start();
 });
 
 // Make distribution files

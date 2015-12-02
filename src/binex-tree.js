@@ -191,8 +191,8 @@ export default class BinexTree {
     let {biggest, columns} = utils.getDimensions(nodes, this.hSpacing);
 
     // Then we layout again taking the node size into acocunt.
-    let layout = d3.layout.tree().nodeSize([biggest.height * this.vSpacing, biggest.width]);
-    let tree = layout.nodes(this.data);
+    let treeLayout = d3.layout.tree().nodeSize([biggest.height * this.vSpacing, biggest.width]);
+    let tree = treeLayout.nodes(this.data);
 
     // once each column was processed, for all nodes, compute y (wich is the inverted x) and positionnate with animation
     nodes.each(d => d.y = columns.reduce((sum, width, i) => sum + (i < d.depth ? width : 0), 0)).
@@ -201,7 +201,7 @@ export default class BinexTree {
         attr('transform', d => `translate(${d.y},${d.x})`);
 
     // Creates link representation (remember, x is y and y is x)
-    let links = layout.links(tree);
+    let links = treeLayout.links(tree);
     let elbow = utils.makeElbow(columns, this.hSpacing);
 
     let link = this.grid.selectAll('path.link').
