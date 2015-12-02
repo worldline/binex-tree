@@ -12,11 +12,11 @@ import d3 from 'd3';
  */
 export const getStyles = (node, defaults, ...styles) => {
   node = node instanceof d3.selection ? node.node() : node;
-  let results = {};
-  let values = window.getComputedStyle(node);
-  let selector = `.${node.getAttribute('class').replace(/ /g, '.')}`;
+  const results = {};
+  const values = window.getComputedStyle(node);
+  const selector = `.${node.getAttribute('class').replace(/ /g, '.')}`;
   styles.forEach(style => {
-    let value = values[style];
+    const value = values[style];
     if (value && value !== '0' && value !== '0px') {
       results[style] = /px$/.test(value) ? parseInt(value) : value;
     } else if (defaults && defaults[selector] && defaults[selector][style]) {

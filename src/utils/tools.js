@@ -9,7 +9,7 @@ import d3 from 'd3';
  * @return {Boolean} true if variable has the expected type, false otherwise
  */
 export const is = (obj, type) => {
-  let clazz = Object.prototype.toString.call(obj).slice(8, -1).toLowerCase();
+  const clazz = Object.prototype.toString.call(obj).slice(8, -1).toLowerCase();
   return obj !== undefined && obj !== null && clazz === type.toLowerCase().trim();
 };
 
@@ -62,14 +62,14 @@ export const makeZoomableGrid = tree => {
  * @return {Number[]} return.columns - array of column widths
  */
 export const getDimensions = (node, hSpacing) => {
-  let biggest = {width: 0, height: 0};
-  let columns = [];
+  const biggest = {width: 0, height: 0};
+  const columns = [];
 
   // Do not use fat arrow to have this aiming at current SVGElement
   /* eslint no-invalid-this: 0 */
   node.each(function(d) {
     let {width, height} = this.getBBox();
-    let depth = d.depth;
+    const depth = d.depth;
     width *= hSpacing;
     if (biggest.width < width) {
       biggest.width = width;
@@ -93,12 +93,12 @@ export const getDimensions = (node, hSpacing) => {
  * @return {Object} a D3 tree structure
  */
 export const translateToTree = data => {
-  let keys = Object.keys(data);
-  let isAnd = keys.indexOf('$and') >= 0;
-  let isOr = keys.indexOf('$or') >= 0;
+  const keys = Object.keys(data);
+  const isAnd = keys.indexOf('$and') >= 0;
+  const isOr = keys.indexOf('$or') >= 0;
   if (isAnd || isOr) {
-    let key = isAnd ? '$and' : '$or';
-    let result = assign({
+    const key = isAnd ? '$and' : '$or';
+    const result = assign({
       name: key,
       children: data[key].map(translateToTree)
     }, data);
@@ -115,7 +115,7 @@ export const translateToTree = data => {
  * @return {Object} corresponding wellformated parsed data
  */
 export const translateFromTree = tree => {
-  let data = {};
+  const data = {};
   switch (tree.name) {
   case '$and':
   case '$or':
@@ -147,10 +147,10 @@ export const translateFromTree = tree => {
  */
 export const makeElbow = (columns, hSpacing) => {
   return ({source, target}) => {
-    let start = source.y + (source.width || 0);
+    const start = source.y + (source.width || 0);
     // Elbow will takes place in horizontal spacing between levels
-    let space = columns[source.depth];
-    let corner = target.y - (space - space / hSpacing) / 2;
+    const space = columns[source.depth];
+    const corner = target.y - (space - space / hSpacing) / 2;
     return `M${start},${source.x}H${corner}V${target.x}H${target.y}`;
   };
 };

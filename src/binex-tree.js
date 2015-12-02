@@ -87,7 +87,7 @@ export default class BinexTree {
     this.fetching = 0;
 
     // Ensure that d3.on returns the current instance.
-    let d3On = this.on;
+    const d3On = this.on;
     this.on = (...args) => {
       d3On.apply(this, args);
       return this;
@@ -110,7 +110,7 @@ export default class BinexTree {
     utils.makeZoomableGrid(this);
 
     // Because we need D3's this in onDrag function, and access to real this also.
-    let context = this;
+    const context = this;
 
     // Drag'n drop listener used to move nodes
     this.dragListener = d3.behavior.drag().
@@ -150,15 +150,15 @@ export default class BinexTree {
   update() {
     // We need a first layout to organize data, and display it.
     // This layout will allow to compute node's dimensions
-    let tree = d3.layout.tree().nodes(this.data).reverse();
+    const tree = d3.layout.tree().nodes(this.data).reverse();
 
     // Associate data to SVG nodes, and add a unic id for linking
     let nextId = 0;
-    let nodes = this.grid.selectAll('g.node').
+    const nodes = this.grid.selectAll('g.node').
       data(tree, d => d.__id || (d.__id = ++nextId));
 
     // Because we need D3's this in onDrag function, and access to real this also.
-    let context = this;
+    const context = this;
 
     // Creates node representation
     nodes.enter().
@@ -185,14 +185,14 @@ export default class BinexTree {
    * Redraw all links
    */
   layout() {
-    let nodes = this.grid.selectAll('g.node');
+    const nodes = this.grid.selectAll('g.node');
 
     // Search for biggest node, and individual column width
-    let {biggest, columns} = utils.getDimensions(nodes, this.hSpacing);
+    const {biggest, columns} = utils.getDimensions(nodes, this.hSpacing);
 
     // Then we layout again taking the node size into acocunt.
-    let treeLayout = d3.layout.tree().nodeSize([biggest.height * this.vSpacing, biggest.width]);
-    let tree = treeLayout.nodes(this.data);
+    const treeLayout = d3.layout.tree().nodeSize([biggest.height * this.vSpacing, biggest.width]);
+    const tree = treeLayout.nodes(this.data);
 
     // once each column was processed, for all nodes, compute y (wich is the inverted x) and positionnate with animation
     nodes.each(d => d.y = columns.reduce((sum, width, i) => sum + (i < d.depth ? width : 0), 0)).
@@ -201,10 +201,10 @@ export default class BinexTree {
         attr('transform', d => `translate(${d.y},${d.x})`);
 
     // Creates link representation (remember, x is y and y is x)
-    let links = treeLayout.links(tree);
-    let elbow = utils.makeElbow(columns, this.hSpacing);
+    const links = treeLayout.links(tree);
+    const elbow = utils.makeElbow(columns, this.hSpacing);
 
-    let link = this.grid.selectAll('path.link').
+    const link = this.grid.selectAll('path.link').
       data(links, d => d.target.__id);
     link.enter().
       insert('path', 'g').
@@ -226,7 +226,7 @@ export default class BinexTree {
    */
   renderNode(node) {
     // We need both access to tree instance and current node
-    let context = this;
+    const context = this;
 
     // Remove previous content
     node.text('');
@@ -239,7 +239,7 @@ export default class BinexTree {
       attr('class', 'decoration').
       // Do not use fat arrow to have this aiming at current SVGElement
       each(function() {
-        let {width} = getStyles(this, context.styles, 'width');
+        const {width} = getStyles(this, context.styles, 'width');
         if (width > 0) {
           d3.select(this).attr('width', width);
         }
@@ -250,13 +250,13 @@ export default class BinexTree {
       attr('class', 'content').
       // Do not use fat arrow to have this aiming at current SVGElement
       each(function(d) {
-        let styles = getStyles(this, context.styles, 'padding-top', 'padding-bottom', 'padding-left', 'padding-right');
+        const styles = getStyles(this, context.styles, 'padding-top', 'padding-bottom', 'padding-left', 'padding-right');
 
-        let parent = d3.select(this.parentNode);
+        const parent = d3.select(this.parentNode);
 
         // Get text dimension
-        let text = parent.select('.text');
-        let {width, height} = text.node().getBBox();
+        const text = parent.select('.text');
+        const {width, height} = text.node().getBBox();
 
         // Resize the rect to wrap text, including padding
         d.width = width + styles['padding-left'] + styles['padding-right'];
@@ -286,17 +286,17 @@ export default class BinexTree {
   }
 
   renderNodeValue(node, value = null) {
-    let d = node.datum();
+    const d = node.datum();
 
     node.select('.value').remove();
     node.select('.value-decoration').remove();
 
 
-    let text = node.append('text').
+    const text = node.append('text').
       attr('class', 'value').
       text(utils.formatNumber(value || d.__value || 0, this.thousandSeparator));
 
-    let styles = getStyles(text, this.styles, 'padding-top', 'padding-bottom', 'padding-left');
+    const styles = getStyles(text, this.styles, 'padding-top', 'padding-bottom', 'padding-left');
 
     text.attr('y', d.height / 2 + styles['padding-top']).
       attr('x', styles['padding-left']);
@@ -317,19 +317,19 @@ export default class BinexTree {
    * @param {Function} actions.handler - function that must be invoked when the menu item is clicked
    */
   renderMenu(menu, data, actions) {
-    let container = menu.append('g');
-    let action = container.selectAll('.action').data(actions).enter().
+    const container = menu.append('g');
+    const action = container.selectAll('.action').data(actions).enter().
       append('g').
         attr('class', ({kind}) => `action ${kind}`).
         each(function(d) {
           d3.select(this).on('click', d.handler);
         });
 
-    let duration = this.animDuration / 2;
+    const duration = this.animDuration / 2;
     // Compute final width manually because it will be animated
     let menuWidth = 0;
 
-    let context = this;
+    const context = this;
 
     action.html(({kind}) => kind === 'edit' ? pencilSVG : kind === 'add' ? plusSVG : timesSVG);
     action.select('svg').attr('class', 'text');
@@ -342,12 +342,12 @@ export default class BinexTree {
         let {width, height, 'margin-right': margin} = getStyles(this, context.styles, 'width', 'height', 'margin-right');
         // If dimensions can't be inferred from CSS, use the classical bounding box
         if (isNaN(width) || isNaN(height)) {
-          let box = this.getBBox();
+          const box = this.getBBox();
           width = box.width;
           height = box.height;
         }
-        let text = d3.select(this.parentNode).select('.text');
-        let testStyle = getStyles(text.node(), context.styles, 'padding-top', 'padding-right', 'padding-bottom', 'padding-left');
+        const text = d3.select(this.parentNode).select('.text');
+        const testStyle = getStyles(text.node(), context.styles, 'padding-top', 'padding-right', 'padding-bottom', 'padding-left');
 
         d3.select(this).
           attr('width', width).
@@ -368,7 +368,7 @@ export default class BinexTree {
       });
 
     // Sizes text to be right placed with a tiny margin
-    let {height} = container.node().getBBox();
+    const {height} = container.node().getBBox();
     container.attr('transform', `translate(${(data.width - menuWidth) / 2}, ${(data.height - height) / 2})`);
   }
 
@@ -382,7 +382,7 @@ export default class BinexTree {
    */
   fetchNodeValue(node) {
     // delay until animation is finished
-    let data = node.datum();
+    const data = node.datum();
     this.fetching++;
     this.fetch(data, (err, value) => {
       this.fetching--;
@@ -445,7 +445,7 @@ export default class BinexTree {
     this.hideMenu();
 
     // Compute needed menu items
-    let items = [{
+    const items = [{
       kind: 'edit',
       handler: () => this.dispatch('editNode', d)
     }];
@@ -562,7 +562,7 @@ export default class BinexTree {
     if (!this.dragged) {
       return;
     }
-    let drop = this.svg.select('.droppable.selected');
+    const drop = this.svg.select('.droppable.selected');
     // Removes temporary drag classes and drop zone listener
     d3.selectAll('.droppable').
       classed('droppable', false).
@@ -578,7 +578,7 @@ export default class BinexTree {
       // Removes sub tree from data
       d.parent.children.splice(d.parent.children.indexOf(d), 1);
 
-      let parent = drop.datum();
+      const parent = drop.datum();
       if (!Array.isArray(parent.children)) {
         // Case of drop node is empty
         parent.children = [];
