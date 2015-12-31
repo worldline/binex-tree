@@ -10,6 +10,9 @@ export const timesSVG = '<svg width="1792" height="1792" viewBox="0 0 1792 1792"
 export const plusSVG = '<svg width="1792" height="1792" viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg"><path d="M1600 736v192q0 40-28 68t-68 28h-416v416q0 40-28 68t-68 28h-192q-40 0-68-28t-28-68v-416h-416q-40 0-68-28t-28-68v-192q0-40 28-68t68-28h416v-416q0-40 28-68t68-28h192q40 0 68 28t28 68v416h416q40 0 68 28t28 68z"/></svg>';
 export const pencilSVG = '<svg width="1792" height="1792" viewBox="0 0 1792 1792" xmlns="http://www.w3.org/2000/svg"><path d="M491 1536l91-91-235-235-91 91v107h128v128h107zm523-928q0-22-22-22-10 0-17 7l-542 542q-7 7-7 17 0 22 22 22 10 0 17-7l542-542q7-7 7-17zm-54-192l416 416-832 832h-416v-416zm683 96q0 53-37 90l-166 166-416-416 166-165q36-38 90-38 53 0 91 38l235 234q37 39 37 91z"/></svg>';
 
+// Latest node id generated
+let nextId = 0;
+
 /**
  * Each BinexTree instance is a D3 widget that displays and edit a request data structure.
  * Represented data must have the following structure:
@@ -153,7 +156,6 @@ export default class BinexTree {
     const tree = d3.layout.tree().nodes(this.data).reverse();
 
     // Associate data to SVG nodes, and add a unic id for linking
-    let nextId = 0;
     const nodes = this.grid.selectAll('g.node').
       data(tree, d => d.__id || (d.__id = ++nextId));
 
