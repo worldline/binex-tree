@@ -119,8 +119,10 @@ export const translateFromTree = tree => {
   switch (tree.name) {
   case '$and':
   case '$or':
-    if (tree.children) {
+    if (tree.hasOwnProperty('children')) {
       data[tree.name] = tree.children.map(translateFromTree).filter(n => Object.keys(n).length > 0);
+    } else {
+      data[tree.name] = [];
     }
     break;
   default:
